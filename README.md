@@ -1,7 +1,7 @@
 # MetaMynd MCP Gateway
 
-**Status: in development — not yet released.** The design is in [docs/design.md](docs/design.md); what each AI app
-actually does is in [docs/hosts.md](docs/hosts.md).
+**Status: 0.1.0, developer preview.** The design is in [docs/design.md](docs/design.md); what each AI app actually
+does is in [docs/hosts.md](docs/hosts.md). Releases: [docs/releasing.md](docs/releasing.md).
 
 Put any AI agent that uses MCP tools under [MetaMynd](https://metamynd.ai) governance — Claude Desktop, Cursor,
 VS Code, ChatGPT, LangGraph, the OpenAI Agents SDK and the rest — **without changing any code**.
