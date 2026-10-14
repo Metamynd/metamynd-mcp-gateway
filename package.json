@@ -1,0 +1,23 @@
+{
+  "name": "@metamynd/mcp-gateway",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Put any MCP-based AI agent (Claude Desktop, Cursor, ChatGPT, LangGraph, ...) under MetaMynd governance without code.",
+  "license": "MIT",
+  "author": "MetaMynd",
+  "homepage": "https://github.com/Metamynd/metamynd-mcp-gateway#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/Metamynd/metamynd-mcp-gateway.git" },
+  "bugs": { "url": "https://github.com/Metamynd/metamynd-mcp-gateway/issues" },
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "files": ["src", "README.md", "LICENSE"],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "typescript": "5.9.3"
+  }
+}
