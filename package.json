@@ -6,11 +6,22 @@
   "license": "MIT",
   "author": "MetaMynd",
   "homepage": "https://github.com/Metamynd/metamynd-mcp-gateway#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/Metamynd/metamynd-mcp-gateway.git" },
-  "bugs": { "url": "https://github.com/Metamynd/metamynd-mcp-gateway/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Metamynd/metamynd-mcp-gateway.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Metamynd/metamynd-mcp-gateway/issues"
+  },
   "type": "module",
-  "engines": { "node": ">=22" },
-  "files": ["src", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test \"test/**/*.test.mjs\"",
@@ -19,5 +30,10 @@
   "devDependencies": {
     "@types/node": "22.20.4",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@metamynd/agentsafe-guard": "0.37.0",
+    "@modelcontextprotocol/client": "2.2.0",
+    "@modelcontextprotocol/server": "2.2.0"
   }
 }
