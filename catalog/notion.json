@@ -1,0 +1,365 @@
+{
+  "id": "notion",
+  "name": "Notion",
+  "description": "Read and edit pages, databases and comments in a Notion workspace, through Notion's official MCP server.",
+  "homepage": "https://github.com/makenotion/notion-mcp-server",
+  "server": {
+    "package": "@notionhq/notion-mcp-server",
+    "version": "2.5.2"
+  },
+  "credentials": [
+    {
+      "env": "NOTION_TOKEN",
+      "title": "Notion integration token",
+      "description": "Create an internal integration at notion.so/my-integrations, copy its secret, and share the pages the agent may use with that integration."
+    }
+  ],
+  "actions": {
+    "notion-read": "Read pages, databases, comments and members",
+    "notion-write": "Create and change pages, databases and comments",
+    "notion-delete": "Delete blocks (moved to the trash)"
+  },
+  "probeEnv": {
+    "NOTION_TOKEN": "ntn_dummy0000000000000000000000000000000000000"
+  },
+  "reviewed": {
+    "by": "MetaMynd",
+    "on": "2026-10-14"
+  },
+  "tools": {
+    "API-get-user": {
+      "summary": "Look up a member of the workspace",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "user_id"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:3fbfb4bfce3d607f4b2b3c412e573d3bfecc420689c5e8de1462153c6d0cf265"
+    },
+    "API-get-users": {
+      "summary": "List the members of the workspace",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "start_cursor",
+        "page_size"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:684bcb9e5dcb45854bd5ef5ed7dd284ad81a283021946a11de4a7deded962ed3"
+    },
+    "API-get-self": {
+      "summary": "Show which Notion integration this is",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:d8b034dc723400269abbc70a97c76f0e439047560e65001f774a663c795585f7"
+    },
+    "API-post-search": {
+      "summary": "Search pages and databases by title",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "query",
+        "sort",
+        "filter",
+        "start_cursor",
+        "page_size"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:97667005b47d60e0441c543c972ff3c5d9bb0d5ae5ecc28bdbb2910b134133b5"
+    },
+    "API-get-block-children": {
+      "summary": "Read the content inside a page or block",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "block_id",
+        "start_cursor",
+        "page_size"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:8696581b6784713747325bcb47e8614522071f644d91e98ddc1979ffb8fe4a4d"
+    },
+    "API-patch-block-children": {
+      "summary": "Add content to a page or block",
+      "action": "notion-write",
+      "effect": "write",
+      "allowedArgs": [
+        "block_id",
+        "children",
+        "after"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:3ff2af640d7e7792765bf35580053c0ddf5dbb8a9bc6016a58509dfc945ce06b"
+    },
+    "API-retrieve-a-block": {
+      "summary": "Read one block",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "block_id"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:954c91fb0520e3c0f61cdbbda08dfb08ab9ccef7c2d5f3c600e127a0c2027cdb"
+    },
+    "API-update-a-block": {
+      "summary": "Change a block, or archive it",
+      "action": "notion-write",
+      "effect": "destructive",
+      "allowedArgs": [
+        "block_id",
+        "type",
+        "archived"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:e49d14b8deb079b66030bdcbb2badb47e7f6490d6438cef470ea8755bc3681ae"
+    },
+    "API-delete-a-block": {
+      "summary": "Delete a block (moves it to the trash)",
+      "action": "notion-delete",
+      "effect": "destructive",
+      "allowedArgs": [
+        "block_id"
+      ],
+      "context": {
+        "riskLevel": "high"
+      },
+      "schemaHash": "sha256:89bd389a9c835543e2cd3905a9b86f05a7bf831722ac8d4dea6cd148d4b59dea"
+    },
+    "API-retrieve-a-page": {
+      "summary": "Read a page's properties",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "page_id",
+        "filter_properties"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:d989fef17a778aa588830ea9c33a5adeab2753afde65000edb4f62d6a1c0f1f2"
+    },
+    "API-patch-page": {
+      "summary": "Change a page's properties, or move it to the trash",
+      "action": "notion-write",
+      "effect": "destructive",
+      "allowedArgs": [
+        "page_id",
+        "properties",
+        "in_trash",
+        "archived",
+        "icon",
+        "cover"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:1dffe804c363a00dc5ae29ccaa6be70815e69e821234ee454bf2c03071e3d3c2"
+    },
+    "API-post-page": {
+      "summary": "Create a page",
+      "action": "notion-write",
+      "effect": "write",
+      "allowedArgs": [
+        "parent",
+        "properties",
+        "children",
+        "icon",
+        "cover"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:fc8c35ba481d0124a970d499940adfe71a34c35ac7394cc4bafbf63026f3fc84"
+    },
+    "API-retrieve-a-page-property": {
+      "summary": "Read one property of a page",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "page_id",
+        "property_id",
+        "page_size",
+        "start_cursor"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:d49b9a09aa72078191d1a7dfad7495ae3235be01010e78eb36abe0ba876f1abf"
+    },
+    "API-retrieve-a-comment": {
+      "summary": "Read the comments on a page or block",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "block_id",
+        "start_cursor",
+        "page_size"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:86e8d4d07f250fa313ef11966ffb43f9de5a34ecee4354f3b8469de756cd1f7e"
+    },
+    "API-create-a-comment": {
+      "summary": "Add a comment",
+      "action": "notion-write",
+      "effect": "write",
+      "allowedArgs": [
+        "parent",
+        "rich_text"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:ad6b6159990eb613ca8103f58c1d725866b3bbd87a81f1d409784f31f30a54e6"
+    },
+    "API-query-data-source": {
+      "summary": "Query a database's rows",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "data_source_id",
+        "filter_properties",
+        "filter",
+        "sorts",
+        "start_cursor",
+        "page_size",
+        "archived",
+        "in_trash"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:2c502fa9b76ef5d3aa30c83e6acda09735197cc39e40f52eca64c574a009bd83"
+    },
+    "API-retrieve-a-data-source": {
+      "summary": "Read a database's structure",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "data_source_id"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:820189b6b73707bbeab8066b9ebe4fef26c75cb6fcfc5f8e40c7e8945bf60000"
+    },
+    "API-update-a-data-source": {
+      "summary": "Change a database's title, description or columns",
+      "action": "notion-write",
+      "effect": "destructive",
+      "allowedArgs": [
+        "data_source_id",
+        "title",
+        "description",
+        "properties"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:fabf28f47acdb07764b4ed49fef68e717bd52cded81b193652be1a5ff0da67db"
+    },
+    "API-create-a-data-source": {
+      "summary": "Create a database",
+      "action": "notion-write",
+      "effect": "write",
+      "allowedArgs": [
+        "parent",
+        "properties",
+        "title"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:b4809ea89e10b6aa252b160b81bb78cf458b655d5c3ebaeaf859da582345b3c2"
+    },
+    "API-list-data-source-templates": {
+      "summary": "List a database's page templates",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "data_source_id",
+        "start_cursor",
+        "page_size"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:3ca0ceca8064ec50d84e5d6d4b5007a0e3809cea9bb373eb957bd851e3e8bfe5"
+    },
+    "API-retrieve-a-database": {
+      "summary": "Read a database",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "database_id"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:1ba6e09b73038e4293b74a007fed6eff0fe891ef3eaf9bfce76c3347c933235f"
+    },
+    "API-move-page": {
+      "summary": "Move a page somewhere else",
+      "action": "notion-write",
+      "effect": "write",
+      "allowedArgs": [
+        "page_id",
+        "parent"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:e3cef1709a556a6ba6b28462582308be1d5101c795dd6ec8e32791fca040824b"
+    },
+    "API-retrieve-page-markdown": {
+      "summary": "Read a page as text",
+      "action": "notion-read",
+      "effect": "read",
+      "allowedArgs": [
+        "page_id",
+        "include_transcript"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:b23669ffea12739d01fd8a0eb365c1e0920a246ebccc23def9c05183ce45641a"
+    },
+    "API-update-page-markdown": {
+      "summary": "Rewrite a page's content",
+      "action": "notion-write",
+      "effect": "destructive",
+      "allowedArgs": [
+        "page_id",
+        "type",
+        "replace_content",
+        "update_content",
+        "insert_content",
+        "replace_content_range"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:43a9e47ee2b6cc3fe311dd961c692377d9e5b57bc73cba704aad01c791564614"
+    }
+  }
+}

@@ -11,12 +11,13 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "bin": { "mcp-gateway": "src/cli.mjs" },
-  "files": ["src", "README.md", "LICENSE", "SECURITY.md"],
+  "files": ["src", "catalog", "README.md", "LICENSE", "SECURITY.md"],
   "publishConfig": { "access": "public" },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test \"test/**/*.test.mjs\"",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "catalog:verify": "node scripts/catalog-verify.mjs"
   },
   "dependencies": {
     "@metamynd/agentsafe-guard": "0.37.1",

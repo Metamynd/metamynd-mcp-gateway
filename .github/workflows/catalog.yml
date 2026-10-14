@@ -1,0 +1,29 @@
+name: catalog
+
+# Re-checks every catalog entry against its real, pinned MCP server (scripts/catalog-verify.mjs): on any change to the
+# catalog or its tooling, and weekly — a published version is immutable on npm, but a deleted or yanked one is not.
+
+on:
+  pull_request:
+    paths: ['catalog/**', 'scripts/catalog-*.mjs', 'src/catalog.mjs', 'src/schema-hash.mjs']
+  push:
+    branches: [main]
+    paths: ['catalog/**', 'scripts/catalog-*.mjs', 'src/catalog.mjs', 'src/schema-hash.mjs']
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run catalog:verify

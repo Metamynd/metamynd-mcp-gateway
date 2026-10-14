@@ -208,12 +208,18 @@ move to the latter.
 
 ### 5.1 Non-technical setup (decision 1)
 
+A browser cannot run the owner's MCP servers to read their tools, and MetaMynd must not hold their credentials, so the
+dashboard works from a **curated catalog** (decided 2026-10-14; [catalog.md](catalog.md)): servers MetaMynd has
+reviewed tool by tool, each pinned to an exact version and re-checked by CI against the real server.
+
 1. In the MetaMynd dashboard, on the agent's page: **Connect to Claude Desktop** (and other hosts).
-2. Add the tools: pick each MCP server and review the drafted mapping in plain language ("*Create payment* — counts
-   against the spending limit; *Look up customer* — read-only").
+2. Add the tools: pick servers from the catalog and tick the tools the agent may use, each shown in plain language
+   ("*Create a page* — changes your workspace; *Search pages* — read-only"); match the catalog's actions to the agent's
+   mandate.
 3. Download the extension (or, for other hosts, copy the generated snippet). The snippet always pins a scoped version:
    `npx -y @metamynd/mcp-gateway@x.y.z`.
-4. Install: double-click the extension; enter each tool's API key when asked. Keys go to the OS keychain.
+4. Install: double-click the extension; enter each tool's API key when asked. Claude stores them securely; MetaMynd
+   never sees them.
 5. Restart the app and use it as before. Allowed calls just work; refusals and held requests are explained in the
    chat; everything appears in the MetaMynd activity log.
 
