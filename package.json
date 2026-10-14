@@ -1,6 +1,6 @@
 {
   "name": "@metamynd/mcp-gateway",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Put any MCP-based AI agent (Claude Desktop, Cursor, ChatGPT, LangGraph, ...) under MetaMynd governance without code.",
   "keywords": [
     "mcp",
