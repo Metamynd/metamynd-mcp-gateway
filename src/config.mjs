@@ -20,6 +20,8 @@ const UPSTREAM_NAME_RE = /^[a-z][a-z0-9-]{0,30}$/;
 const SCHEMA_HASH_RE = /^sha256:[0-9a-f]{64}$/;
 const RISK_LEVELS = new Set(['low', 'medium', 'high', 'critical']);
 const ON_TOOL_ERROR = new Set(['capture', 'void']);
+/** What a tool does, as the reviewer judged it — the only source of the hints the gateway gives apps (docs/hosts.md). */
+const EFFECTS = new Set(['read', 'write', 'destructive']);
 /** A secret is referenced, never written: `${VAR}` (environment) or `keychain:<name>` (the OS keychain). */
 const SECRET_REF_RE = /\$\{[A-Z_][A-Z0-9_]*\}|^keychain:[A-Za-z0-9._-]+$/;
 
@@ -28,7 +30,8 @@ const SECRET_REF_RE = /\$\{[A-Z_][A-Z0-9_]*\}|^keychain:[A-Za-z0-9._-]+$/;
  * @typedef {{
  *   upstream: string, tool: string, exposedName: string, action: string,
  *   amount?: string, currency?: string, merchant?: string,
- *   allowedArgs: string[], context: Record<string, unknown>, schemaHash: string, onToolError: 'capture' | 'void'
+ *   allowedArgs: string[], context: Record<string, unknown>, schemaHash: string, onToolError: 'capture' | 'void',
+ *   effect?: 'read' | 'write' | 'destructive'
  * }} ToolMapping
  * @typedef {{ agentConfig: string, upstreams: Record<string, Upstream>, tools: Map<string, ToolMapping>, escalationWaitMs: number, warnings: string[] }} GatewayConfig
  */
@@ -236,9 +239,16 @@ function parseTool(key, t, upstreams, problems) {
   const onToolError = t.onToolError ?? 'capture';
   if (!ON_TOOL_ERROR.has(/** @type {string} */ (onToolError))) problems.push(`${where}.onToolError: "capture" (default) or "void"`);
 
+  // Optional: without it the app is given no hint and applies its own (cautious) default. A tool that moves value is
+  // never "read" — that hint would let an app skip its confirmation for a payment.
+  const effect = t.effect;
+  if (effect !== undefined && !EFFECTS.has(/** @type {string} */ (effect))) problems.push(`${where}.effect: "read", "write" or "destructive"`);
+  else if (effect === 'read' && value.amount) problems.push(`${where}.effect: a tool that moves an amount is not "read"`);
+
   if (!allowedArgs || !isObject(context)) return null;
   return {
     upstream, tool, exposedName, action, ...value, allowedArgs,
     context, schemaHash, onToolError: /** @type {'capture'|'void'} */ (onToolError),
+    ...(EFFECTS.has(/** @type {string} */ (effect)) ? { effect: /** @type {'read'|'write'|'destructive'} */ (effect) } : {}),
   };
 }

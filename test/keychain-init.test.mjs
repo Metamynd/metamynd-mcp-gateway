@@ -69,7 +69,7 @@ test('init drafts: action from the tool name, value fields by name and type, ris
   const pay = draftMapping(PAY_TOOL);
   assert.deepEqual({ ...pay, schemaHash: undefined }, {
     review: true, action: 'create-payment', amount: 'amount', currency: 'currency', merchant: 'payee',
-    allowedArgs: ['amount', 'currency', 'payee'], context: { riskLevel: 'high' }, schemaHash: undefined,
+    allowedArgs: ['amount', 'currency', 'payee'], effect: 'write', context: { riskLevel: 'high' }, schemaHash: undefined,
   });
   assert.equal(pay.schemaHash, schemaHashOf(PAY_TOOL));
   const read = draftMapping({ name: 'listInvoices', inputSchema: { type: 'object', properties: { customer: { type: 'string' } } }, annotations: { readOnlyHint: true } });

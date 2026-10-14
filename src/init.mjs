@@ -34,6 +34,9 @@ export function draftMapping(def) {
   const merchant = find(MERCHANT_NAMES, 'string');
   const ann = /** @type {{ readOnlyHint?: boolean, destructiveHint?: boolean }} */ (def.annotations ?? {});
   const riskLevel = amount || ann.destructiveHint ? 'high' : ann.readOnlyHint ? 'low' : 'medium';
+  // The hint apps get, drafted from the server's own annotations and confirmed by the reviewer. A tool that moves value
+  // is a write whatever the server claims; with no claim at all the draft is "destructive", MCP's own cautious default.
+  const effect = amount ? 'write' : ann.destructiveHint === true ? 'destructive' : ann.readOnlyHint === true ? 'read' : 'destructive';
   return {
     review: true,
     action: actionFromToolName(def.name),
@@ -41,6 +44,7 @@ export function draftMapping(def) {
     ...(currency ? { currency } : {}),
     ...(merchant ? { merchant } : {}),
     allowedArgs: args,
+    effect,
     context: { riskLevel },
     schemaHash: schemaHashOf(def),
     ...(amount && !currency ? { _note: `"${amount}" looks like an amount but no currency argument was found; map one, or this tool cannot move value` } : {}),

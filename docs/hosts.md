@@ -63,7 +63,7 @@ design around, not a fact. Re-check before each release — hosts change quickly
    protocol faults.
 5. **Secrets:** through `env` only, never `args`. The `.mcpb` marks tool keys `sensitive: true`; VS Code guides use
    `inputs` with `password: true`.
-6. **Annotations:** the gateway sets `readOnlyHint` only from its own reviewed mapping (an action that moves no value),
-   never forwards upstream annotations as truth.
+6. **Annotations:** the gateway sets them only from the mapping's reviewed `effect` (`read` / `write` / `destructive`;
+   a tool that moves value is never `read`), and never forwards an upstream's own annotations.
 7. **Approval never relies on elicitation** (undocumented in Claude Desktop; LangChain re-runs the tool on resume).
 8. **SDK:** build on SDK v2; test against hosts on both 2025-11-25 and 2026-07-28 until they converge.

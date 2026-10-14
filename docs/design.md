@@ -104,6 +104,11 @@ explains them to the user.
 - Every listed tool is governed (decision 4). Unmapped tools are hidden; there is no "allow ungoverned" switch.
 - Descriptions pass through from upstream with one line added: *"Governed by MetaMynd: may be refused or held for
   approval."*
+- **Hints come from the reviewer, never the server.** Apps use MCP tool annotations to decide when to ask the user
+  first (VS Code skips its confirmation for a read-only tool). An upstream's annotations are its own claim about
+  itself, so they are dropped; the gateway sets them from the mapping's reviewed `effect`: `read` →
+  `readOnlyHint: true`; `write` → not read-only, not destructive; `destructive` → `destructiveHint: true`; no effect →
+  no hint, so the app applies its own cautious default.
 
 ### 3.3 Held requests and resume
 
@@ -153,6 +158,7 @@ settle in delegated mode, so the request is checked at both ends.
       "action": "payment.create",
       "amount": "amount", "currency": "currency", "merchant": "payee",
       "allowedArgs": ["amount", "currency", "payee", "reference"],
+      "effect": "write",                           // the hint apps get: "read" | "write" | "destructive" (§3.2)
       "context": { "riskLevel": "medium" },
       "schemaHash": "sha256:…"                      // pinned tool definition (§6, T4)
     },
@@ -162,6 +168,7 @@ settle in delegated mode, so the request is checked at both ends.
 ```
 
 - Value fields name tool arguments (dotted paths for nested ones). A read maps none.
+- `effect` is optional; a tool that moves an amount can never be `"read"`.
 - Secrets come from `keychain:<name>` (the OS keychain) or `${VAR}` (the environment); never written in the file.
 - The gateway refuses to start if an upstream has no credential configured.
 
@@ -170,7 +177,9 @@ settle in delegated mode, so the request is checked at both ends.
 `npx @metamynd/mcp-gateway init` connects to each upstream, reads `tools/list`, and drafts a mapping for **every**
 tool (decision 4):
 
-- tools annotated `readOnlyHint: true` are drafted as reads;
+- tools annotated `readOnlyHint: true` are drafted as reads (`effect: "read"`), `destructiveHint: true` as
+  `"destructive"`, a tool with a value field as `"write"` whatever it claims, and a tool with no annotations as
+  `"destructive"` (MCP's own cautious default);
 - arguments named like `amount` / `currency` / `payee` / `merchant` are drafted as value fields;
 - each draft entry carries `"review": true`, and the gateway won't start until all are reviewed.
 

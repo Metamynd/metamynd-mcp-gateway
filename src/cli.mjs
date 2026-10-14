@@ -77,7 +77,7 @@ async function serve() {
     log,
     callUpstream: (mapping, args) => /** @type {any} */ (clients.get(mapping.upstream)).callTool({ name: mapping.tool, arguments: args }),
   });
-  const server = createGatewayServer({ offered, governance });
+  const server = createGatewayServer({ offered, governance, serverInfo: { name: 'metamynd', version: await ownVersion() } });
   await server.connect(new StdioServerTransport());
   log({ event: 'ready', agentDid: guard.agentDid, offered: offered.length, withheld: withheld.length, upstreams: clients.size });
 
