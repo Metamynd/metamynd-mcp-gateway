@@ -18,6 +18,6 @@ Pushing a version tag publishes `@metamynd/mcp-gateway` to npm (`.github/workflo
   `@metamynd/mcp-gateway` → Settings → Trusted publishing → GitHub Actions: organization `Metamynd`, repository
   `metamynd-mcp-gateway`, workflow `release.yml`, environment `npm`. Provenance is attached automatically (the
   repository is public).
-- **`NPM_TOKEN` secret** (the first release only — npm allows trusted publishing only once a package exists): a
+- **`NPM_TOKEN` (or `NPM`) secret** (the first release only — npm allows trusted publishing only once a package exists): a
   granular token with read and write on `@metamynd` and "Bypass two-factor authentication". The workflow uses it while
   the secret exists. **Delete the secret once trusted publishing is configured**, so no token can expire or leak.
