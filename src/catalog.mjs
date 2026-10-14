@@ -96,7 +96,7 @@ export function configFromCatalog(catalog, { agentConfig, picks, actionMap = {},
     upstreams[e.id] = {
       command: 'npx',
       args: ['-y', `${e.server.package}@${e.server.version}`, ...(e.server.args ?? [])],
-      env: Object.fromEntries(e.credentials.map((c) => [c.env, credentials === 'keychain' ? `keychain:${e.id}-${c.env.toLowerCase().replace(/_/g, '-')}` : `\${${c.env}}`])),
+      env: Object.fromEntries(e.credentials.map((c) => [c.env, credentials === 'keychain' ? `keychain:${keychainName(e, c)}` : `\${${c.env}}`])),
     };
     for (const name of pick.tools) {
       const t = e.tools[name];
@@ -109,4 +109,45 @@ export function configFromCatalog(catalog, { agentConfig, picks, actionMap = {},
   const config = { agentConfig, upstreams, tools };
   parseConfig(config, '/'); // the same checks the gateway makes at start
   return config;
+}
+
+/**
+ * The catalog servers a config runs: an upstream named for a catalog entry that starts that entry's package at its
+ * reviewed version (what configFromCatalog writes). A hand-written upstream that only shares a name does not count.
+ * @param {Iterable<CatalogEntry>} catalog
+ * @param {Record<string, any>} raw a gateway config
+ * @returns {Array<{ id: string }>}
+ */
+export function catalogPicksIn(catalog, raw) {
+  const upstreams = /** @type {Record<string, any>} */ (raw?.upstreams ?? {});
+  return [...catalog]
+    .filter((e) => Array.isArray(upstreams[e.id]?.args) && upstreams[e.id].args.includes(`${e.server.package}@${e.server.version}`))
+    .map((e) => ({ id: e.id }));
+}
+
+/** The keychain entry a catalog credential is stored under: `<id>-<env, lower-case, dashed>`. */
+const keychainName = (/** @type {CatalogEntry} */ e, /** @type {{ env: string }} */ c) => `${e.id}-${c.env.toLowerCase().replace(/_/g, '-')}`;
+
+/**
+ * What the catalog says about each credential the picked servers need, for planExtension's `fields`: the reviewed
+ * title and how to get it, keyed by every reference configFromCatalog can write for it (`NOTION_TOKEN` for `\${NOTION_TOKEN}`,
+ * `keychain:notion-notion-token` for the keychain form), so Claude Desktop asks for "Notion integration token" rather
+ * than "notion: NOTION_TOKEN".
+ * @param {Iterable<CatalogEntry>} catalog
+ * @param {Array<{ id: string }>} picks
+ * @returns {Record<string, { title: string, description: string }>}
+ */
+export function credentialFields(catalog, picks) {
+  const byId = new Map([...catalog].map((e) => [e.id, e]));
+  /** @type {Record<string, { title: string, description: string }>} */
+  const out = {};
+  for (const pick of picks) {
+    const e = byId.get(pick.id);
+    for (const c of e?.credentials ?? []) {
+      const field = { title: c.title, description: c.description };
+      out[c.env] = field;
+      out[`keychain:${keychainName(/** @type {CatalogEntry} */ (e), c)}`] = field;
+    }
+  }
+  return out;
 }

@@ -27,9 +27,11 @@ const fieldFor = (/** @type {string} */ env) => env.toLowerCase();
 
 /**
  * Plan the bundle: the manifest, the config and agent file it carries. Pure.
- * @param {{ raw: Record<string, any>, agentFile: Record<string, any>, version: string, agentName?: string }} input
+ * `fields` names a credential the way its owner knows it (catalog.mjs credentialFields): keyed by the reference in the
+ * config, `ENV` for `\${ENV}` or `keychain:<name>`; a credential it does not name keeps a generic title.
+ * @param {{ raw: Record<string, any>, agentFile: Record<string, any>, version: string, agentName?: string, fields?: Record<string, { title: string, description: string }> }} input
  */
-export function planExtension({ raw, agentFile, version, agentName }) {
+export function planExtension({ raw, agentFile, version, agentName, fields = {} }) {
   /** @type {string[]} */
   const warnings = [];
   /** @type {Map<string, { title: string, description: string }>} env var → field description */
@@ -43,10 +45,10 @@ export function planExtension({ raw, agentFile, version, agentName }) {
       if (kc) {
         const env = envForKeychain(kc[1]);
         bag[key] = `\${${env}}`;
-        secrets.set(env, { title: `${name}: ${key}`, description: `The ${key} the "${name}" tools need (was keychain:${kc[1]}).` });
+        secrets.set(env, fields[`keychain:${kc[1]}`] ?? { title: `${name}: ${key}`, description: `The ${key} the "${name}" tools need (was keychain:${kc[1]}).` });
         continue;
       }
-      for (const m of value.matchAll(VAR_RE)) secrets.set(m[1], { title: `${name}: ${m[1]}`, description: `The ${m[1]} the "${name}" tools need.` });
+      for (const m of value.matchAll(VAR_RE)) secrets.set(m[1], fields[m[1]] ?? { title: `${name}: ${m[1]}`, description: `The ${m[1]} the "${name}" tools need.` });
     }
     if (u.command !== undefined && path.isAbsolute(String(u.command))) {
       warnings.push(`upstreams.${name}.command is a path on this machine (${u.command}); it will not exist on another computer`);

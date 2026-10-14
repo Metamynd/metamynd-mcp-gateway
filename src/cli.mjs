@@ -21,6 +21,7 @@ import { createGuardFromConfig } from '@metamynd/agentsafe-guard';
 import { ConfigError, loadConfig, parseDraftConfig } from './config.mjs';
 import { createGatewayServer } from './gateway.mjs';
 import { createGovernance } from './governance.mjs';
+import { catalogPicksIn, credentialFields, loadCatalog } from './catalog.mjs';
 import { AGENT_KEY_ENV, buildExtension, composeExtension, planExtension } from './extension.mjs';
 import { HOSTS, hostSnippet } from './hosts.mjs';
 import { draftTools } from './init.mjs';
@@ -173,7 +174,10 @@ async function extension() {
   const raw = JSON.parse(await readFile(file, 'utf8'));
   const parsed = await loadConfig(file); // refuses an unreviewed or invalid config
   const agentFile = JSON.parse(await readFile(parsed.agentConfig, 'utf8'));
-  const plan = planExtension({ raw, agentFile, version: await ownVersion(), agentName: values.name });
+  // Upstreams that came from the catalog get its credential titles ("Notion integration token"), the rest generic ones.
+  const catalog = [...(await loadCatalog()).values()];
+  const fields = credentialFields(catalog, catalogPicksIn(catalog, raw));
+  const plan = planExtension({ raw, agentFile, version: await ownVersion(), agentName: values.name, fields });
   for (const w of plan.warnings) say(`warning: ${w}`);
   const out = values.out ?? `${plan.manifest.name}.mcpb`;
   if (values.base) {

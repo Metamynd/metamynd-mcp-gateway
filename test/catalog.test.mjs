@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ConfigError, parseConfig } from '../src/config.mjs';
-import { configFromCatalog, entryProblems, loadCatalog } from '../src/catalog.mjs';
+import { catalogPicksIn, configFromCatalog, credentialFields, entryProblems, loadCatalog } from '../src/catalog.mjs';
 import { planExtension } from '../src/extension.mjs';
 
 test('the shipped catalog loads, and every entry passes the gateway\'s own checks', async () => {
@@ -48,6 +48,31 @@ test('the catalog flows into a Claude Desktop extension with the credential as a
   const plan = planExtension({ raw, agentFile: { agentDid: 'did:x', keyProvider: 'daemon' }, version: '0.2.0', agentName: 'Docs helper' });
   assert.deepEqual(Object.keys(/** @type {any} */ (plan.manifest.user_config)), ['notion_token']);
   assert.equal(plan.manifest.server.mcp_config.env.NOTION_TOKEN, '${user_config.notion_token}');
+  assert.equal(/** @type {any} */ (plan.manifest.user_config).notion_token.title, 'notion: NOTION_TOKEN'); // no fields: generic
+});
+
+test('the extension asks for each credential by its catalog title, in both credential forms', async () => {
+  const catalog = await loadCatalog();
+  const picks = [{ id: 'notion', tools: ['API-post-search'] }];
+  const notion = /** @type {any} */ (catalog.get('notion')).credentials[0];
+  const fields = credentialFields(catalog.values(), picks);
+  const agentFile = { agentDid: 'did:x', keyProvider: 'daemon' };
+
+  const envRaw = configFromCatalog(catalog.values(), { agentConfig: './a.json', picks });
+  const byEnv = /** @type {any} */ (planExtension({ raw: envRaw, agentFile, version: '0.2.1', fields }).manifest.user_config);
+  assert.deepEqual(byEnv.notion_token, { type: 'string', title: 'Notion integration token', description: notion.description, sensitive: true, required: true });
+
+  const kcRaw = configFromCatalog(catalog.values(), { agentConfig: './a.json', picks, credentials: 'keychain' });
+  const byKc = /** @type {any} */ (planExtension({ raw: kcRaw, agentFile, version: '0.2.1', fields }).manifest.user_config);
+  assert.equal(byKc.mcpgw_secret_notion_notion_token.title, 'Notion integration token');
+});
+
+test('catalogPicksIn finds catalog servers in a config, not hand-written look-alikes', async () => {
+  const catalog = [...(await loadCatalog()).values()];
+  const raw = configFromCatalog(catalog, { agentConfig: './a.json', picks: [{ id: 'notion', tools: ['API-post-search'] }] });
+  assert.deepEqual(catalogPicksIn(catalog, raw), [{ id: 'notion' }]);
+  assert.deepEqual(catalogPicksIn(catalog, { upstreams: { notion: { command: 'node', args: ['./my-notion.mjs'] } } }), []);
+  assert.deepEqual(catalogPicksIn(catalog, {}), []);
 });
 
 test('entryProblems catches what a reviewer could miss', () => {

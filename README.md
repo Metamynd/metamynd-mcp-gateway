@@ -48,11 +48,12 @@ The configuration format is in [docs/design.md §4](docs/design.md#4-configurati
 The MetaMynd dashboard builds each agent's extension with two typed entry points:
 
 ```js
-import { loadCatalog, configFromCatalog } from '@metamynd/mcp-gateway/catalog';
+import { loadCatalog, configFromCatalog, credentialFields } from '@metamynd/mcp-gateway/catalog';
 import { planExtension, composeExtension } from '@metamynd/mcp-gateway/extension';
 ```
 
-The base bundle `composeExtension` builds from is attached to each GitHub release ([docs/releasing.md](docs/releasing.md)).
+Pass `credentialFields(catalog, picks)` to `planExtension` as `fields` so Claude Desktop asks for each credential by its catalog
+title ("Notion integration token"). The base bundle `composeExtension` builds from is attached to each GitHub release ([docs/releasing.md](docs/releasing.md)).
 
 ## License
 
