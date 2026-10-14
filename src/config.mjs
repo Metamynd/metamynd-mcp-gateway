@@ -9,8 +9,12 @@ import path from 'node:path';
 
 /** The separator between an upstream's name and its tool's name in what the host sees: `<upstream>__<tool>`. */
 export const NAME_SEPARATOR = '__';
-/** The longest exposed tool name accepted; the conservative common limit across hosts (confirmed per host in phase 0). */
-export const MAX_EXPOSED_NAME = 64;
+/** The longest exposed tool name: with a short host key it keeps server + tool under Cursor's ~60 (docs/hosts.md). */
+export const MAX_EXPOSED_NAME = 48;
+/** Above this many governed tools some hosts drop tools (Cursor reports ~40 in total, docs/hosts.md): a warning. */
+export const TOOL_COUNT_WARNING = 40;
+/** Hosts time a tool call out at ~60 s (docs/hosts.md), so the gateway never waits longer than this for an approval. */
+export const MAX_ESCALATION_WAIT_MS = 30_000;
 const EXPOSED_NAME_RE = /^[A-Za-z0-9_-]+$/;
 const UPSTREAM_NAME_RE = /^[a-z][a-z0-9-]{0,30}$/;
 const SCHEMA_HASH_RE = /^sha256:[0-9a-f]{64}$/;
@@ -26,7 +30,7 @@ const SECRET_REF_RE = /\$\{[A-Z_][A-Z0-9_]*\}|^keychain:[A-Za-z0-9._-]+$/;
  *   amount?: string, currency?: string, merchant?: string,
  *   allowedArgs: string[], context: Record<string, unknown>, schemaHash: string, onToolError: 'capture' | 'void'
  * }} ToolMapping
- * @typedef {{ agentConfig: string, upstreams: Record<string, Upstream>, tools: Map<string, ToolMapping> }} GatewayConfig
+ * @typedef {{ agentConfig: string, upstreams: Record<string, Upstream>, tools: Map<string, ToolMapping>, escalationWaitMs: number, warnings: string[] }} GatewayConfig
  */
 
 export class ConfigError extends Error {
@@ -101,8 +105,18 @@ export function parseConfig(raw, baseDir = process.cwd()) {
     if (![...tools.values()].some((m) => m.upstream === name)) problems.push(`upstreams.${name}: no tool of it is mapped, so it would offer nothing`);
   }
 
+  const escalationWaitMs = raw.escalationWaitMs ?? 0;
+  if (typeof escalationWaitMs !== 'number' || !Number.isInteger(escalationWaitMs) || escalationWaitMs < 0 || escalationWaitMs > MAX_ESCALATION_WAIT_MS) {
+    problems.push(`"escalationWaitMs": whole milliseconds from 0 to ${MAX_ESCALATION_WAIT_MS} (apps give up on a tool call after about a minute)`);
+  }
+
   if (problems.length) throw new ConfigError(problems);
-  return { agentConfig, upstreams, tools };
+  /** @type {string[]} */
+  const warnings = [];
+  if (tools.size > TOOL_COUNT_WARNING) {
+    warnings.push(`${tools.size} tools are governed; some apps show only about ${TOOL_COUNT_WARNING} in total, so offer fewer if tools go missing`);
+  }
+  return { agentConfig, upstreams, tools, escalationWaitMs: /** @type {number} */ (escalationWaitMs), warnings };
 }
 
 /**

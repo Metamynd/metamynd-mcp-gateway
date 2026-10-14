@@ -98,7 +98,9 @@ explains them to the user.
 
 ### 3.2 Tool naming and listing
 
-- Exposed names are `<upstream>__<tool>`, kept under 64 characters, so tools from different servers can't collide.
+- Exposed names are `<upstream>__<tool>`, at most 48 characters of `[A-Za-z0-9_-]`, so tools from different servers
+  can't collide and every phase-1 host accepts them ([hosts.md](hosts.md)). More than 40 governed tools draws a
+  warning: some hosts show only about that many.
 - Every listed tool is governed (decision 4). Unmapped tools are hidden; there is no "allow ungoverned" switch.
 - Descriptions pass through from upstream with one line added: *"Governed by MetaMynd: may be refused or held for
   approval."*
@@ -115,7 +117,10 @@ MCP has no "pending" state and hosts time tool calls out, so the gateway never b
    - **pending** → "held for approval" again;
    - **rejected or expired** → refused, journal entry removed.
 3. Different arguments are a new request, decided afresh.
-4. Optionally (`escalationWaitMs`, default 0) it waits briefly for a decision, for hosts with long tool timeouts.
+4. Optionally (`escalationWaitMs`, default 0, at most 30 s) it waits briefly for a decision. Several hosts give up on a
+   tool call after about a minute ([hosts.md](hosts.md)), so every call is answered well within that.
+5. Approval never relies on MCP elicitation: Claude Desktop does not document it, and some frameworks re-run the tool
+   when an elicitation resumes.
 
 **Prerequisite:** the signer daemon must gain a `sign-resume-claim` operation. Without it, a resume signed with a
 daemon-held key is not claimed at MetaMynd, so two processes could resume one approval. This lands in
@@ -175,13 +180,16 @@ non-technical users the same draft is produced and reviewed in the MetaMynd dash
 ## 5. Hosts
 
 The gateway speaks standard MCP, so any MCP client can use it. What differs is **transport** and **installation**.
-Phase 0 confirms each row against the host's current documentation before we publish setup guides.
+What each phase-1 host actually does — config files, name and tool-count limits, timeouts, secrets — is in
+**[hosts.md](hosts.md)** (phase 0). The gateway is built on the MCP TypeScript SDK v2 (`@modelcontextprotocol/server`,
+`@modelcontextprotocol/client`) and must work with hosts on both spec revisions 2025-11-25 and 2026-07-28 while they
+move to the latter.
 
 | Host family | Examples | Transport | How a user installs it | Phase |
 |---|---|---|---|---|
 | Desktop chat apps | Claude Desktop | stdio | **One-click extension** (`.mcpb`): asks for the agent file and the tool credentials, stored in the OS keychain | 1 |
 | Coding assistants / IDEs | Claude Code, Cursor, VS Code (Copilot agent mode), Windsurf, Zed, Cline | stdio | A generated snippet per host | 1 |
-| Agent frameworks | OpenAI Agents SDK, LangGraph / LangChain MCP adapters, CrewAI, Google ADK, Microsoft Agent Framework, LlamaIndex, Mastra, Vercel AI SDK, Pydantic AI | stdio or HTTP | Point the framework's MCP client at the gateway — configuration, no governance code | 1 |
+| Agent frameworks | OpenAI Agents SDK, LangGraph / LangChain (`langchain[mcp]`), CrewAI, Google ADK, Microsoft Agent Framework, LlamaIndex, Mastra, Vercel AI SDK, Pydantic AI | stdio or HTTP | Point the framework's MCP client at the gateway — configuration, no governance code | 1 |
 | Hosted chat products | ChatGPT (connectors / apps), Claude.ai custom connectors, Microsoft Copilot Studio | **remote HTTPS only** | A **self-hosted** gateway URL with OAuth sign-in | 3 |
 | Workflow tools | n8n and others with an MCP client step | HTTP | A self-hosted gateway URL | 3 |
 
@@ -244,7 +252,7 @@ The MetaMynd gate, mandates, evidence and APIs are unchanged.
 
 | Phase | Scope | Done when |
 |---|---|---|
-| 0 | Spikes: each phase-1 host's transport, tool-name limits, timeouts and error display; `.mcpb` packaging; `sign-resume-claim` in the signer | A one-page host matrix of what each host actually does |
+| 0 | Spikes: each phase-1 host's transport, tool-name limits, timeouts and error display; `.mcpb` packaging; `sign-resume-claim` in the signer | **Done 2026-10-14:** [hosts.md](hosts.md); `sign-resume-claim` in `@metamynd/agentsafe-signer` 0.23.0 (released with the next MetaMynd tag) |
 | 1 | Local gateway; held requests and resume; `init`; the **Claude Desktop extension**; dashboard "Connect to …"; snippets for Claude Code, Cursor, VS Code; OpenAI Agents SDK and LangGraph | A non-technical user reaches a first governed action in < 5 minutes from the dashboard alone; the bypass tests show no upstream execution without an allow |
 | 2 | More hosts' snippets and guides (Windsurf, Zed, Cline, CrewAI, ADK, …) | Each listed host has a tested guide |
 | 3 | Self-hosted remote mode: Streamable HTTP, OAuth, Docker image | ChatGPT and one workflow tool governed through a customer-run gateway |

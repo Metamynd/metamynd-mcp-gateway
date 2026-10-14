@@ -75,7 +75,28 @@ test('names: bad upstream names, unknown upstreams, over-long exposed names and 
   const p = problemsOf(raw);
   has(p, 'upstreams.Bad_Name: a name is lower-case');
   has(p, 'no upstream named "ghost"');
-  has(p, 'must be at most 64 characters');
+  has(p, 'must be at most 48 characters');
+});
+
+test('docs/hosts.md: names fit every phase-1 host (48 chars, no dots), held requests never outwait the app', () => {
+  const raw = valid();
+  raw.tools['crm.lookup.customer'] = { action: 'records.read', allowedArgs: [], schemaHash: HASH };
+  has(problemsOf(raw), 'crm__lookup.customer');
+  const wait = valid();
+  wait.escalationWaitMs = 45_000;
+  has(problemsOf(wait), '"escalationWaitMs": whole milliseconds from 0 to 30000');
+  wait.escalationWaitMs = 10_000;
+  assert.equal(parseConfig(wait, '/cfg').escalationWaitMs, 10_000);
+});
+
+test('more than 40 governed tools is a warning, not an error', () => {
+  const raw = valid();
+  for (let i = 0; i < 40; i++) raw.tools[`crm.read_${i}`] = { action: 'records.read', allowedArgs: [], schemaHash: HASH };
+  const cfg = parseConfig(raw, '/cfg');
+  assert.equal(cfg.tools.size, 42);
+  assert.equal(cfg.warnings.length, 1);
+  assert.match(cfg.warnings[0], /42 tools are governed/);
+  assert.deepEqual(parseConfig(valid(), '/cfg').warnings, []);
 });
 
 test('remote upstreams must use https, except to this machine', () => {
