@@ -78,7 +78,9 @@ jobs:
       - name: GitHub release with the base bundle and its checksum
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.mcpb dist/*.mcpb.sha256 --title "$GITHUB_REF_NAME" --notes "@metamynd/mcp-gateway ${GITHUB_REF_NAME#v} on npm: https://www.npmjs.com/package/@metamynd/mcp-gateway. The .mcpb is the base the MetaMynd dashboard builds each agent's Claude Desktop extension from."
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.mcpb dist/*.mcpb.sha256 --title "$GITHUB_REF_NAME" \
+            --notes "@metamynd/mcp-gateway ${GITHUB_REF_NAME#v} on npm: https://www.npmjs.com/package/@metamynd/mcp-gateway. The .mcpb is the base the MetaMynd dashboard builds each agent's Claude Desktop extension from."
 
       - name: Summary
         run: echo "Published @metamynd/mcp-gateway@${GITHUB_REF_NAME#v} — https://www.npmjs.com/package/@metamynd/mcp-gateway" >> "$GITHUB_STEP_SUMMARY"
