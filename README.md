@@ -30,7 +30,14 @@ and the [MAGP v1.0 protocol](https://metamynd.ai/developers/spec).
 mcp-gateway secret set payments-api-key            # store a tool's key in the OS keychain (input hidden)
 mcp-gateway init --config mcp-gateway.json         # draft a mapping for every tool of every server
 mcp-gateway --config mcp-gateway.json              # run it for an AI app (stdio)
+mcp-gateway extension --config mcp-gateway.json --name "Accounts Payable"   # one-click Claude Desktop extension
+mcp-gateway config --host cursor --config mcp-gateway.json                 # the snippet for another app
 ```
+
+`extension` builds a `.mcpb` for one agent. Nothing secret is inside it: each credential, and the agent's key, becomes
+a field Claude Desktop asks for at install and stores securely. `config --host` knows `claude-desktop`, `claude-code`,
+`cursor`, `vscode`, `openai-agents-python`, `openai-agents-js` and `langchain`
+([docs/hosts.md](docs/hosts.md)).
 
 `init` marks every drafted tool `"review": true`; the gateway will not start until each one has been checked against
 the agent's mandate and the flag removed. Credentials are referenced, never written: `keychain:<name>` or `${VAR}`.

@@ -5,6 +5,8 @@
 //   mcp-gateway init --config <mcp-gateway.json>                         draft the mapping for every upstream tool
 //   mcp-gateway secret set <name>                                        store a credential in the OS keychain
 //   mcp-gateway secret check <name>                                      say whether it is there (never prints it)
+//   mcp-gateway config --host <app> --config <file>                      print the snippet that adds it to an AI app
+//   mcp-gateway extension --config <file> [--name <agent>] [--out x.mcpb] build a one-click Claude Desktop extension
 //
 // MCP_GATEWAY_CONFIG may stand in for --config. When serving, stdout carries the MCP protocol, so everything the
 // gateway reports goes to stderr, which AI apps log.
@@ -19,6 +21,8 @@ import { createGuardFromConfig } from '@metamynd/agentsafe-guard';
 import { ConfigError, loadConfig, parseDraftConfig } from './config.mjs';
 import { createGatewayServer } from './gateway.mjs';
 import { createGovernance } from './governance.mjs';
+import { AGENT_KEY_ENV, buildExtension, planExtension } from './extension.mjs';
+import { HOSTS, hostSnippet } from './hosts.mjs';
 import { draftTools } from './init.mjs';
 import { openJournal } from './journal.mjs';
 import { createKeychain } from './keychain.mjs';
@@ -32,7 +36,7 @@ const say = (line) => process.stderr.write(`${line}\n`);
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { config: { type: 'string' }, 'state-dir': { type: 'string' } },
+  options: { config: { type: 'string' }, 'state-dir': { type: 'string' }, host: { type: 'string' }, out: { type: 'string' }, name: { type: 'string' } },
 });
 const stateDir = values['state-dir'] ?? path.join(os.homedir(), '.metamynd', 'mcp-gateway');
 const keychain = createKeychain({ stateDir });
@@ -53,7 +57,9 @@ async function serve() {
   if (typeof agentFile.agentKey === 'string' && agentFile.agentKey) {
     log({ event: 'warning', message: `${config.agentConfig} holds the agent's key in plain text; keep it in the signer daemon (keyProvider: "daemon") so no tool the AI can use can read it` });
   }
-  const guard = await createGuardFromConfig(config.agentConfig);
+  // A Claude Desktop extension passes the key it stored securely in MCPGW_AGENT_KEY (src/extension.mjs).
+  const envKey = process.env[AGENT_KEY_ENV];
+  const guard = await createGuardFromConfig(config.agentConfig, envKey ? { agentKey: envKey } : {});
 
   const clients = await connectUpstreams(config, { sources });
   /** @type {Map<string, import('./upstreams.mjs').ToolDef[]>} */
@@ -149,9 +155,40 @@ async function secret() {
 }
 
 const command = positionals[0] ?? 'serve';
-const run = { serve, init, secret }[command];
+async function config() {
+  const file = configFile();
+  if (!values.host) {
+    say(`usage: mcp-gateway config --host <${Object.keys(HOSTS).join(' | ')}> --config <file>`);
+    return;
+  }
+  await loadConfig(file); // only a reviewed, valid config is worth installing
+  const { title, where, snippet } = hostSnippet(values.host, { configPath: path.resolve(file), version: await ownVersion() });
+  say(`${title} — ${where}:\n`);
+  process.stdout.write(`${snippet}\n`);
+  say('\nThe tools\' keys are not in this snippet: store each with `mcp-gateway secret set <name>` and reference it as keychain:<name>.');
+}
+
+async function extension() {
+  const file = configFile();
+  const raw = JSON.parse(await readFile(file, 'utf8'));
+  const parsed = await loadConfig(file); // refuses an unreviewed or invalid config
+  const agentFile = JSON.parse(await readFile(parsed.agentConfig, 'utf8'));
+  const plan = planExtension({ raw, agentFile, version: await ownVersion(), agentName: values.name });
+  for (const w of plan.warnings) say(`warning: ${w}`);
+  const out = values.out ?? `${plan.manifest.name}.mcpb`;
+  say(`Building ${out} (fetching the gateway's dependencies and the mcpb packer)…`);
+  await buildExtension(plan, { outFile: out });
+  say(`Built ${out}. Double-click it to install in Claude Desktop; it will ask for ${Object.keys(plan.manifest.user_config ?? {}).length} credential(s), which Claude stores securely. Nothing secret is inside the file.`);
+}
+
+async function ownVersion() {
+  const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  return String(pkg.version);
+}
+
+const run = { serve, init, secret, config, extension }[command];
 if (!run) {
-  say(`unknown command "${command}" — use serve, init or secret`);
+  say(`unknown command "${command}" — use serve, init, secret, config or extension`);
   process.exit(2);
 }
 run().catch((err) => {
