@@ -7,3 +7,5 @@ coverage/
 # never commit an agent identity or a gateway config holding secrets
 agent.metamynd.json
 mcp-gateway.local.json
+# generated from the JSDoc by npm run build:types (prepack)
+types/

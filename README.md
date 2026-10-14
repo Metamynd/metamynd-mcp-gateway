@@ -43,6 +43,17 @@ a field Claude Desktop asks for at install and stores securely. `config --host` 
 the agent's mandate and the flag removed. Credentials are referenced, never written: `keychain:<name>` or `${VAR}`.
 The configuration format is in [docs/design.md §4](docs/design.md#4-configuration).
 
+## For integrators
+
+The MetaMynd dashboard builds each agent's extension with two typed entry points:
+
+```js
+import { loadCatalog, configFromCatalog } from '@metamynd/mcp-gateway/catalog';
+import { planExtension, composeExtension } from '@metamynd/mcp-gateway/extension';
+```
+
+The base bundle `composeExtension` builds from is attached to each GitHub release ([docs/releasing.md](docs/releasing.md)).
+
 ## License
 
 [MIT](LICENSE)
