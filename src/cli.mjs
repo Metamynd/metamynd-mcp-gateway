@@ -21,7 +21,7 @@ import { createGuardFromConfig } from '@metamynd/agentsafe-guard';
 import { ConfigError, loadConfig, parseDraftConfig } from './config.mjs';
 import { createGatewayServer } from './gateway.mjs';
 import { createGovernance } from './governance.mjs';
-import { AGENT_KEY_ENV, buildExtension, planExtension } from './extension.mjs';
+import { AGENT_KEY_ENV, buildExtension, composeExtension, planExtension } from './extension.mjs';
 import { HOSTS, hostSnippet } from './hosts.mjs';
 import { draftTools } from './init.mjs';
 import { openJournal } from './journal.mjs';
@@ -36,7 +36,7 @@ const say = (line) => process.stderr.write(`${line}\n`);
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { config: { type: 'string' }, 'state-dir': { type: 'string' }, host: { type: 'string' }, out: { type: 'string' }, name: { type: 'string' } },
+  options: { config: { type: 'string' }, 'state-dir': { type: 'string' }, host: { type: 'string' }, out: { type: 'string' }, name: { type: 'string' }, base: { type: 'string' } },
 });
 const stateDir = values['state-dir'] ?? path.join(os.homedir(), '.metamynd', 'mcp-gateway');
 const keychain = createKeychain({ stateDir });
@@ -176,8 +176,13 @@ async function extension() {
   const plan = planExtension({ raw, agentFile, version: await ownVersion(), agentName: values.name });
   for (const w of plan.warnings) say(`warning: ${w}`);
   const out = values.out ?? `${plan.manifest.name}.mcpb`;
-  say(`Building ${out} (fetching the gateway's dependencies and the mcpb packer)…`);
-  await buildExtension(plan, { outFile: out });
+  if (values.base) {
+    // A released base bundle (docs/releasing.md): compose locally, no install and no packer.
+    await writeFile(out, composeExtension(new Uint8Array(await readFile(values.base)), plan));
+  } else {
+    say(`Building ${out} (fetching the gateway's dependencies and the mcpb packer)…`);
+    await buildExtension(plan, { outFile: out });
+  }
   say(`Built ${out}. Double-click it to install in Claude Desktop; it will ask for ${Object.keys(plan.manifest.user_config ?? {}).length} credential(s), which Claude stores securely. Nothing secret is inside the file.`);
 }
 

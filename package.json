@@ -2,17 +2,42 @@
   "name": "@metamynd/mcp-gateway",
   "version": "0.1.0",
   "description": "Put any MCP-based AI agent (Claude Desktop, Cursor, ChatGPT, LangGraph, ...) under MetaMynd governance without code.",
-  "keywords": ["mcp", "model-context-protocol", "ai-agents", "governance", "metamynd", "claude-desktop", "gateway"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "governance",
+    "metamynd",
+    "claude-desktop",
+    "gateway"
+  ],
   "license": "MIT",
   "author": "MetaMynd",
   "homepage": "https://github.com/Metamynd/metamynd-mcp-gateway#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/Metamynd/metamynd-mcp-gateway.git" },
-  "bugs": { "url": "https://github.com/Metamynd/metamynd-mcp-gateway/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Metamynd/metamynd-mcp-gateway.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Metamynd/metamynd-mcp-gateway/issues"
+  },
   "type": "module",
-  "engines": { "node": ">=22" },
-  "bin": { "mcp-gateway": "src/cli.mjs" },
-  "files": ["src", "catalog", "README.md", "LICENSE", "SECURITY.md"],
-  "publishConfig": { "access": "public" },
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "mcp-gateway": "src/cli.mjs"
+  },
+  "files": [
+    "src",
+    "catalog",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test \"test/**/*.test.mjs\"",
@@ -22,7 +47,8 @@
   "dependencies": {
     "@metamynd/agentsafe-guard": "0.37.1",
     "@modelcontextprotocol/client": "2.2.0",
-    "@modelcontextprotocol/server": "2.2.0"
+    "@modelcontextprotocol/server": "2.2.0",
+    "fflate": "0.8.3"
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "2.1.2",

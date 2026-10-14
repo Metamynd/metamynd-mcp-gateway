@@ -10,7 +10,13 @@ Pushing a version tag publishes `@metamynd/mcp-gateway` to npm (`.github/workflo
    git push origin v0.1.0
    ```
 3. The workflow checks the tag matches `package.json`, the package is not private and not already published, runs
-   typecheck and tests, shows what will be packed, and publishes.
+   typecheck and tests, shows what will be packed, builds the **base bundle**, publishes, and creates the GitHub
+   release with `metamynd-mcp-gateway-<version>.mcpb` and its `.sha256`.
+
+The base bundle is the gateway, its production dependencies and the catalog, under a manifest that names no agent. The
+MetaMynd dashboard downloads it once per gateway version, checks the SHA-256, and composes each agent's Claude Desktop
+extension from it (`composeExtension`): no install and no network per request, and nothing secret inside.
+`mcp-gateway extension --base <file>` does the same locally.
 
 ## npm authentication
 

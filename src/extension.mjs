@@ -11,6 +11,7 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 
 export const MANIFEST_VERSION = '0.2';
 export const MCPB_PACKAGE = '@anthropic-ai/mcpb@2.1.2';
@@ -115,14 +116,86 @@ const runChecked = (cmd, args, cwd) => new Promise((resolve, reject) => {
  * @param {{ outFile: string, packageRoot?: string }} opts
  */
 export async function buildExtension(plan, { outFile, packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..') }) {
+  return stageAndPack(plan.manifest, configFiles(plan), { outFile, packageRoot });
+}
+
+/** The two per-agent files a bundle carries next to its manifest. Nothing secret: see planExtension. */
+function configFiles(/** @type {ReturnType<typeof planExtension>} */ plan) {
+  return {
+    'mcp-gateway.json': `${JSON.stringify(plan.gatewayConfig, null, 2)}\n`,
+    'agent.metamynd.json': `${JSON.stringify(plan.agentFile, null, 2)}\n`,
+  };
+}
+
+/**
+ * The generic base bundle a release attaches (docs/catalog.md): the gateway, its production dependencies and the
+ * catalog, with a manifest that names no agent. The MetaMynd dashboard composes each agent's extension from it
+ * (composeExtension) without installing or packing anything per request.
+ * @param {string} version the gateway version
+ */
+export function baseManifest(version) {
+  return {
+    manifest_version: MANIFEST_VERSION,
+    name: 'metamynd-mcp-gateway',
+    display_name: 'MetaMynd MCP gateway (base)',
+    version,
+    description: 'The base the MetaMynd dashboard builds each agent\'s extension from. Install the extension the dashboard gives you, not this file.',
+    author: { name: 'MetaMynd', url: 'https://metamynd.ai' },
+    homepage: 'https://github.com/Metamynd/metamynd-mcp-gateway',
+    license: 'MIT',
+    server: {
+      type: 'node',
+      entry_point: 'server/src/cli.mjs',
+      mcp_config: { command: 'node', args: ['${__dirname}/server/src/cli.mjs', '--config', '${__dirname}/mcp-gateway.json'], env: {} },
+    },
+  };
+}
+
+/**
+ * Build the base bundle for this package's own version.
+ * @param {{ outFile: string, packageRoot?: string }} opts
+ */
+export async function buildBase({ outFile, packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..') }) {
+  const pkg = JSON.parse(await readFile(path.join(packageRoot, 'package.json'), 'utf8'));
+  return stageAndPack(baseManifest(String(pkg.version)), {}, { outFile, packageRoot });
+}
+
+/**
+ * One agent's extension from a base bundle: the base's server (gateway, dependencies, catalog) with this agent's
+ * manifest, config and agent file. Pure — no install, no network — so a server can do it per request.
+ * @param {Uint8Array} base the base bundle's bytes (a zip)
+ * @param {ReturnType<typeof planExtension>} plan
+ * @returns {Uint8Array} the agent's .mcpb
+ */
+export function composeExtension(base, plan) {
+  if (plan.agentFile.agentKey || plan.agentFile.agentKeyEncrypted) throw new Error('refusing to put an agent key in an extension');
+  const files = unzipSync(base);
+  const serverPkg = files['server/package.json'];
+  if (!files['server/src/cli.mjs'] || !serverPkg) throw new Error('not a MetaMynd gateway base bundle');
+  const baseVersion = JSON.parse(strFromU8(serverPkg)).version;
+  if (baseVersion !== plan.manifest.version) throw new Error(`the base is gateway ${baseVersion}, the plan is for ${plan.manifest.version}`);
+  const out = Object.fromEntries(Object.entries(files).filter(([name]) => name.startsWith('server/')));
+  out['manifest.json'] = strToU8(`${JSON.stringify(plan.manifest, null, 2)}\n`);
+  for (const [name, text] of Object.entries(configFiles(plan))) out[name] = strToU8(text);
+  return zipSync(out, { level: 9 });
+}
+
+/**
+ * Stage a bundle directory — manifest, extra files, and server/ (the gateway's src and catalog, plus its production
+ * dependencies) — validate the manifest and pack it with the official mcpb CLI.
+ * @param {Record<string, unknown>} manifest
+ * @param {Record<string, string>} extraFiles
+ * @param {{ outFile: string, packageRoot: string }} opts
+ */
+async function stageAndPack(manifest, extraFiles, { outFile, packageRoot }) {
   const stage = await mkdtemp(path.join(os.tmpdir(), 'mcpgw-mcpb-'));
   try {
-    await writeFile(path.join(stage, 'manifest.json'), `${JSON.stringify(plan.manifest, null, 2)}\n`);
-    await writeFile(path.join(stage, 'mcp-gateway.json'), `${JSON.stringify(plan.gatewayConfig, null, 2)}\n`);
-    await writeFile(path.join(stage, 'agent.metamynd.json'), `${JSON.stringify(plan.agentFile, null, 2)}\n`);
+    await writeFile(path.join(stage, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+    for (const [name, text] of Object.entries(extraFiles)) await writeFile(path.join(stage, name), text);
     const server = path.join(stage, 'server');
     await mkdir(server);
     await cp(path.join(packageRoot, 'src'), path.join(server, 'src'), { recursive: true });
+    await cp(path.join(packageRoot, 'catalog'), path.join(server, 'catalog'), { recursive: true });
     const pkg = JSON.parse(await readFile(path.join(packageRoot, 'package.json'), 'utf8'));
     await writeFile(path.join(server, 'package.json'), `${JSON.stringify({ name: pkg.name, version: pkg.version, type: 'module', private: true, dependencies: pkg.dependencies }, null, 2)}\n`);
     await runChecked('npm', ['install', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], server);

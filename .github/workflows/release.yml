@@ -18,7 +18,7 @@ on:
     tags: ['v*.*.*']
 
 permissions:
-  contents: read
+  contents: write # the GitHub release that carries the base bundle
   id-token: write # OIDC for trusted publishing and provenance
 
 concurrency:
@@ -61,6 +61,10 @@ jobs:
       - name: What will be published
         run: npm pack --dry-run 2>&1 | tee pack.txt && ! grep -E 'test/|\.github/|docs/|agent\.metamynd\.json|\.env' pack.txt
 
+      # Built BEFORE publishing, so a release that cannot produce its base bundle publishes nothing.
+      - name: Base bundle for the MetaMynd dashboard
+        run: node scripts/build-base.mjs dist
+
       - name: Publish (npm token, first release only)
         if: ${{ env.HAS_TOKEN == 'true' }}
         env:
@@ -70,6 +74,11 @@ jobs:
       - name: Publish (trusted publishing)
         if: ${{ env.HAS_TOKEN != 'true' }}
         run: npm publish --access public
+
+      - name: GitHub release with the base bundle and its checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.mcpb dist/*.mcpb.sha256 --title "$GITHUB_REF_NAME" --notes "@metamynd/mcp-gateway ${GITHUB_REF_NAME#v} on npm: https://www.npmjs.com/package/@metamynd/mcp-gateway. The .mcpb is the base the MetaMynd dashboard builds each agent's Claude Desktop extension from."
 
       - name: Summary
         run: echo "Published @metamynd/mcp-gateway@${GITHUB_REF_NAME#v} — https://www.npmjs.com/package/@metamynd/mcp-gateway" >> "$GITHUB_STEP_SUMMARY"
