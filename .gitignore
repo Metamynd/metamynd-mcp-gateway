@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.*
+# never commit an agent identity or a gateway config holding secrets
+agent.metamynd.json
+mcp-gateway.local.json
