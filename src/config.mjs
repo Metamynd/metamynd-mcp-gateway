@@ -70,23 +70,7 @@ export function parseConfig(raw, baseDir = process.cwd()) {
   /** @type {string[]} */
   const problems = [];
   if (!isObject(raw)) throw new ConfigError(['the file must contain a JSON object']);
-
-  const agentConfig = typeof raw.agentConfig === 'string' && raw.agentConfig.trim() ? path.resolve(baseDir, raw.agentConfig) : '';
-  if (!agentConfig) problems.push('"agentConfig" must name the agent file (agent.metamynd.json)');
-
-  /** @type {Record<string, Upstream>} */
-  const upstreams = {};
-  if (!isObject(raw.upstreams) || Object.keys(raw.upstreams).length === 0) {
-    problems.push('"upstreams" must list at least one MCP server');
-  } else {
-    for (const [name, u] of Object.entries(raw.upstreams)) {
-      const where = `upstreams.${name}`;
-      if (!UPSTREAM_NAME_RE.test(name)) problems.push(`${where}: a name is lower-case letters, digits and "-", starting with a letter, at most 31 characters`);
-      if (!isObject(u)) { problems.push(`${where}: must be an object`); continue; }
-      const parsed = parseUpstream(u, where, problems);
-      if (parsed) upstreams[name] = parsed;
-    }
-  }
+  const { agentConfig, upstreams } = parseHead(raw, baseDir, problems);
 
   /** @type {Map<string, ToolMapping>} */
   const tools = new Map();
@@ -117,6 +101,47 @@ export function parseConfig(raw, baseDir = process.cwd()) {
     warnings.push(`${tools.size} tools are governed; some apps show only about ${TOOL_COUNT_WARNING} in total, so offer fewer if tools go missing`);
   }
   return { agentConfig, upstreams, tools, escalationWaitMs: /** @type {number} */ (escalationWaitMs), warnings };
+}
+
+/**
+ * Validate only what `mcp-gateway init` needs before any tool is mapped: the agent file and the upstreams.
+ * @param {unknown} raw
+ * @param {string} [baseDir]
+ * @returns {{ agentConfig: string, upstreams: Record<string, Upstream> }}
+ */
+export function parseDraftConfig(raw, baseDir = process.cwd()) {
+  /** @type {string[]} */
+  const problems = [];
+  if (!isObject(raw)) throw new ConfigError(['the file must contain a JSON object']);
+  const head = parseHead(raw, baseDir, problems);
+  if (problems.length) throw new ConfigError(problems);
+  return head;
+}
+
+/**
+ * The agent file and the upstreams, shared by the full and the draft parse.
+ * @param {Record<string, unknown>} raw
+ * @param {string} baseDir
+ * @param {string[]} problems
+ */
+function parseHead(raw, baseDir, problems) {
+  const agentConfig = typeof raw.agentConfig === 'string' && raw.agentConfig.trim() ? path.resolve(baseDir, raw.agentConfig) : '';
+  if (!agentConfig) problems.push('"agentConfig" must name the agent file (agent.metamynd.json)');
+
+  /** @type {Record<string, Upstream>} */
+  const upstreams = {};
+  if (!isObject(raw.upstreams) || Object.keys(raw.upstreams).length === 0) {
+    problems.push('"upstreams" must list at least one MCP server');
+  } else {
+    for (const [name, u] of Object.entries(raw.upstreams)) {
+      const where = `upstreams.${name}`;
+      if (!UPSTREAM_NAME_RE.test(name)) problems.push(`${where}: a name is lower-case letters, digits and "-", starting with a letter, at most 31 characters`);
+      if (!isObject(u)) { problems.push(`${where}: must be an object`); continue; }
+      const parsed = parseUpstream(u, where, problems);
+      if (parsed) upstreams[name] = parsed;
+    }
+  }
+  return { agentConfig, upstreams };
 }
 
 /**

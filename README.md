@@ -24,6 +24,18 @@ held for approval. The tools' API keys live in the gateway, not in the app, so t
 Built on the open-source MetaMynd SDKs in [Metamynd/agentsafe-guard](https://github.com/Metamynd/agentsafe-guard)
 and the [MAGP v1.0 protocol](https://metamynd.ai/developers/spec).
 
+## Commands (developer preview)
+
+```bash
+mcp-gateway secret set payments-api-key            # store a tool's key in the OS keychain (input hidden)
+mcp-gateway init --config mcp-gateway.json         # draft a mapping for every tool of every server
+mcp-gateway --config mcp-gateway.json              # run it for an AI app (stdio)
+```
+
+`init` marks every drafted tool `"review": true`; the gateway will not start until each one has been checked against
+the agent's mandate and the flag removed. Credentials are referenced, never written: `keychain:<name>` or `${VAR}`.
+The configuration format is in [docs/design.md §4](docs/design.md#4-configuration).
+
 ## License
 
 [MIT](LICENSE)
