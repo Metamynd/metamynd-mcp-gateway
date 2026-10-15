@@ -18,6 +18,9 @@ MetaMynd dashboard downloads it once per gateway version, checks the SHA-256, an
 extension from it (`composeExtension`): no install and no network per request, and nothing secret inside.
 `mcp-gateway extension --base <file>` does the same locally.
 
+4. Before announcing it, a person runs the **[release checklist](release-checklist.md)** in Claude Desktop, Cursor and
+   VS Code (they can't be driven headless), including the timed first action.
+
 ## npm authentication
 
 - **Trusted publishing** (the normal case): no stored token. Configured once on npmjs.com →

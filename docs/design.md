@@ -1,8 +1,10 @@
 # MetaMynd MCP Gateway — governing any MCP host without code
 
-**Status:** Phase 1 built (0.1.0–0.2.3, October 2026): the local gateway, held requests, `init`, host snippets, the
-Claude Desktop extension, the curated catalog and the dashboard's "Connect to …". Open in phase 1: conformance runs with
-real framework clients and the GUI release checklist (§9). Phases 2–4 not started. **Package:** `@metamynd/mcp-gateway` · **Repository:**
+**Status:** Phase 1 built (0.1.0–0.2.4, October 2026): the local gateway, held requests, `init`, host snippets, the
+Claude Desktop extension, the curated catalog (Notion, HubSpot, Brave Search), the dashboard's "Connect to an AI app",
+conformance runs with real framework clients, and the [release checklist](release-checklist.md). Open in phase 1: the
+timed first-action run in Claude Desktop (a person, per the checklist). **Phases 2–4 are on hold until phase 1 is stable**
+(owner decision, 2026-10-15). **Package:** `@metamynd/mcp-gateway` · **Repository:**
 [Metamynd/metamynd-mcp-gateway](https://github.com/Metamynd/metamynd-mcp-gateway) · **Editors:** MetaMynd
 
 Builds on [MAGP v1.0](https://metamynd.ai/developers/spec) and the published MetaMynd SDKs in
@@ -284,7 +286,8 @@ The MetaMynd gate, mandates, evidence and APIs are unchanged.
 | Phase | Scope | Done when |
 |---|---|---|
 | 0 | Spikes: each phase-1 host's transport, tool-name limits, timeouts and error display; `.mcpb` packaging; `sign-resume-claim` in the signer | **Done 2026-10-14:** [hosts.md](hosts.md); `sign-resume-claim` in `@metamynd/agentsafe-signer` 0.23.0 (released with the next MetaMynd tag) |
-| 1 | Local gateway; held requests and resume; `init`; the **Claude Desktop extension**; dashboard "Connect to …"; snippets for Claude Code, Cursor, VS Code; OpenAI Agents SDK and LangGraph | A non-technical user reaches a first governed action in < 5 minutes from the dashboard alone; the bypass tests show no upstream execution without an allow. **Built** (0.1.0–0.2.3, dashboard in MetaMynd v1.95+); the bypass tests pass with the MCP SDK client. **Open:** a timed first-action run with a real Claude Desktop install, conformance runs with real framework clients (§10), and the GUI checklist. |
+| 1 | Local gateway; held requests and resume; `init`; the **Claude Desktop extension**; dashboard "Connect to …"; snippets for Claude Code, Cursor, VS Code; OpenAI Agents SDK and LangGraph | A non-technical user reaches a first governed action in < 5 minutes from the dashboard alone; the bypass tests show no upstream execution without an allow. **Built** (0.1.0–0.2.4). The bypass cases pass identically through the MCP TypeScript SDK, the OpenAI Agents SDK (JavaScript and Python) and LangChain / LangGraph in CI (`npm run conformance`). **Open:** the timed first-action run, by a person, per the [release checklist](release-checklist.md). |
+| | **Phases 2–4: on hold until phase 1 is stable.** | |
 | 2 | More hosts' snippets and guides (Windsurf, Zed, Cline, CrewAI, ADK, …) | Each listed host has a tested guide |
 | 3 | Self-hosted remote mode: Streamable HTTP, OAuth, Docker image | ChatGPT and one workflow tool governed through a customer-run gateway |
 | 4 | Delegated chaining with `agentsafe-mcp-guard` upstreams; several agents per remote gateway | — |
@@ -292,9 +295,11 @@ The MetaMynd gate, mandates, evidence and APIs are unchanged.
 ## 10. Testing
 
 - **Unit:** mapping and argument checks, settlement rules, journal, schema pinning, every refusal path.
-- **Conformance (CI):** a fake upstream MCP server and a mock MetaMynd gate; the gateway driven by real headless MCP
-  clients (the MCP SDK client, Claude Code, the OpenAI Agents SDK, LangGraph), asserting identical verdicts across all
-  of them.
+- **Conformance (CI, `npm run conformance`):** a real upstream MCP server and a fake MetaMynd gate over HTTP; the
+  gateway started and driven by real framework clients (the MCP TypeScript SDK, the OpenAI Agents SDK in JavaScript and
+  Python, LangChain / LangGraph), asserting identical verdicts and upstream runs across all of them. Claude Code needs
+  a signed-in account to run headless, so it is covered by the release checklist instead.
 - **Adversarial:** prompt-injected over-limit calls, argument smuggling, renamed or changed tools, replayed retries,
   MetaMynd unreachable.
-- **GUI hosts:** a manual release checklist (Claude Desktop, Cursor, VS Code) with screenshots for the guides.
+- **GUI hosts:** the [release checklist](release-checklist.md) (Claude Desktop, Cursor, VS Code), with screenshots for
+  the guides and the timed first action.

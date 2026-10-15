@@ -45,7 +45,8 @@
     "prepack": "npm run build:types",
     "test": "node --test \"test/**/*.test.mjs\"",
     "check": "npm run typecheck && npm test",
-    "catalog:verify": "node scripts/catalog-verify.mjs"
+    "catalog:verify": "node scripts/catalog-verify.mjs",
+    "conformance": "node conformance/run.mjs"
   },
   "dependencies": {
     "@metamynd/agentsafe-guard": "0.37.1",

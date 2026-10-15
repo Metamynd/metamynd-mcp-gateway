@@ -1,0 +1,3 @@
+# The Python frameworks conformance/run.mjs drives the gateway through (pinned; bump deliberately).
+openai-agents==0.24.0
+langchain-mcp-adapters==0.3.2
