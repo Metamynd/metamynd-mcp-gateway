@@ -20,7 +20,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 import { createGuardFromConfig } from '@metamynd/agentsafe-guard';
 import { ConfigError, loadConfig, parseDraftConfig } from './config.mjs';
 import { createGatewayServer } from './gateway.mjs';
-import { createGovernance } from './governance.mjs';
+import { GUARD_OPTIONS, createGovernance } from './governance.mjs';
 import { catalogPicksIn, credentialFields, loadCatalog, serviceSetupFor } from './catalog.mjs';
 import { AGENT_KEY_ENV, buildExtension, composeExtension, planExtension } from './extension.mjs';
 import { HOSTS, directAccessWarning, hostSnippet } from './hosts.mjs';
@@ -68,7 +68,7 @@ async function serve() {
     agentKey = (await resolveSecrets({ agentKey: config.agentKey }, 'mcp-gateway.json', sources, missing)).agentKey;
     if (missing.length) throw new SecretError(missing);
   }
-  const guard = await createGuardFromConfig(config.agentConfig, agentKey ? { agentKey } : {});
+  const guard = await createGuardFromConfig(config.agentConfig, { ...GUARD_OPTIONS, ...(agentKey ? { agentKey } : {}) });
 
   const clients = await connectUpstreams(config, { sources });
   /** @type {Map<string, import('./upstreams.mjs').ToolDef[]>} */

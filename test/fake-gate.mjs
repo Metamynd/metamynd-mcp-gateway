@@ -14,6 +14,8 @@ export function installFakeGate({ decide }) {
     voids: /** @type {string[]} */ ([]),
     escalations: /** @type {Map<string, { status: string, authorizationId?: string }>} */ (new Map()),
     resumeClaims: /** @type {string[]} */ ([]),
+    /** Policy-bundle fetches: a guard deciding locally fetches the bundle first; one deciding at the gate never does. */
+    bundleFetches: 0,
   };
   const reply = (/** @type {unknown} */ data, status = 200) => new Response(JSON.stringify({ success: status < 400, data }), { status, headers: { 'content-type': 'application/json' } });
   globalThis.fetch = /** @type {typeof fetch} */ (async (url, init = {}) => {
@@ -40,6 +42,7 @@ export function installFakeGate({ decide }) {
     }
     if ((m = /\/escalations\/([^/]+)\/resume-claim$/.exec(p))) { state.resumeClaims.push(m[1]); return reply({ claimed: true }); }
     if (p.endsWith('/policy/decisions/local')) return reply({ recorded: true });
+    if (/\/policy\/bundle\//.test(p)) { state.bundleFetches += 1; return reply({ reasonCode: 'NOT_FOUND' }, 404); }
     return reply({ reasonCode: 'NOT_FOUND', path: p }, 404);
   });
   return {

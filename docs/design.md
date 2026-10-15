@@ -100,6 +100,12 @@ the agent: it uses the agent's identity and the same authorize, capture and void
    approved."* and journal the escalation (§3.3).
 6. **On any refusal:** return the reason code and the gate's hint. The upstream tool is never called.
 
+**Every call is decided at the gate**, reads included: the gateway runs its guard with `mode: 'remote'`. The guard's
+default (local-first) decides a permitted call that moves no money on the user's computer from the cached bundle and only
+reports it; that suits an SDK a developer embeds, not a gateway that governs an app on its owner's behalf (found in the
+first real Claude Desktop run, 2026-10-15). Conformance fails if the policy bundle is fetched or a decision is only
+reported.
+
 Refusals are **tool results with `isError: true`**, not JSON-RPC errors, so every host shows them to the model, which
 explains them to the user.
 

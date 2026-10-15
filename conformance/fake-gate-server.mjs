@@ -7,9 +7,10 @@
 import crypto from 'node:crypto';
 import http from 'node:http';
 
-/** @returns {Promise<{ url: string, state: { authorizations: any[], captures: any[], voids: string[] }, close: () => Promise<void> }>} */
+/** @returns {Promise<{ url: string, state: { authorizations: any[], captures: any[], voids: string[], bundleFetches: number, localReports: number }, close: () => Promise<void> }>} */
 export async function startFakeGate() {
-  const state = { authorizations: /** @type {any[]} */ ([]), captures: /** @type {any[]} */ ([]), voids: /** @type {string[]} */ ([]) };
+  // bundleFetches: a guard deciding locally fetches the policy bundle first; the gateway decides every call at the gate.
+  const state = { authorizations: /** @type {any[]} */ ([]), captures: /** @type {any[]} */ ([]), voids: /** @type {string[]} */ ([]), bundleFetches: 0, localReports: 0 };
   const escalations = new Map();
   const server = http.createServer((req, res) => {
     let raw = '';
@@ -39,7 +40,8 @@ export async function startFakeGate() {
         const status = escalations.get(m[1]);
         return status ? reply({ escalationId: m[1], status, reasonCode: `ESCALATION_${status.toUpperCase()}` }) : reply({ reasonCode: 'NOT_FOUND' }, 404);
       }
-      if (p.endsWith('/policy/decisions/local')) return reply({ recorded: true });
+      if (p.endsWith('/policy/decisions/local')) { state.localReports += 1; return reply({ recorded: true }); }
+      if (/\/policy\/bundle\//.test(p)) { state.bundleFetches += 1; return reply({ reasonCode: 'NOT_FOUND' }, 404); }
       return reply({ reasonCode: 'NOT_FOUND', path: p }, 404);
     });
   });

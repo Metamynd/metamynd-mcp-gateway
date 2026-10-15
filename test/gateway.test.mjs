@@ -10,7 +10,7 @@ import { Client } from '@modelcontextprotocol/client';
 import { createGuard } from '@metamynd/agentsafe-guard';
 import { parseConfig } from '../src/config.mjs';
 import { createGatewayServer, GOVERNED_NOTE } from '../src/gateway.mjs';
-import { createGovernance } from '../src/governance.mjs';
+import { GUARD_OPTIONS, createGovernance } from '../src/governance.mjs';
 import { journalKey, openJournal } from '../src/journal.mjs';
 import { schemaHashOf } from '../src/schema-hash.mjs';
 import { SecretError, resolveSecrets } from '../src/secrets.mjs';
@@ -47,7 +47,7 @@ test('over MCP: the app sees only governed tools, and a call is decided by MetaM
     const { offered, withheld } = reconcileTools(config, new Map([['payments', await listAllTools(/** @type {any} */ (upstream.client))]]));
     assert.equal(withheld.length, 0);
     const { agentDid, agentKey } = await testAgent();
-    const guard = createGuard({ api: 'http://gate.test/api/v1', agentDid, agentKey, signContext: false });
+    const guard = createGuard({ api: 'http://gate.test/api/v1', agentDid, agentKey, signContext: false, ...GUARD_OPTIONS });
     const journal = await openJournal(path.join(await mkdtemp(path.join(os.tmpdir(), 'mcpgw-')), 'held.json'));
     const governance = createGovernance({ guard, journal, callUpstream: (m, args) => /** @type {any} */ (upstream.client.callTool({ name: m.tool, arguments: args })) });
     const server = createGatewayServer({ offered, governance });

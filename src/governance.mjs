@@ -15,6 +15,16 @@ import { journalKey } from './journal.mjs';
 const REJECTED_BEFORE_RUNNING = new Set([-32601, -32602]);
 const MAX_TEXT = 2000;
 
+/**
+ * How the gateway's guard decides (docs/design.md §3.1, decision 4): EVERY call at the MetaMynd gate, reads included.
+ * The guard's default is local-first: a permitted call that moves no money is decided on this computer against the
+ * cached signed bundle and only reported to MetaMynd ("agent-reported"). That suits an SDK a developer embeds; the
+ * gateway governs an AI app on its owner's behalf, so the gate decides, records the decision as evidence, and every
+ * allowed call is held and captured (at 0 for a read). Found in the first real Claude Desktop run (2026-10-15): seven
+ * searches were allowed locally and the dashboard showed "0 allowed, +7 agent-reported".
+ */
+export const GUARD_OPTIONS = Object.freeze({ mode: /** @type {'remote'} */ ('remote') });
+
 /** The upstream refused the call before running it (unknown tool, invalid params): nothing ran, so the hold is released. */
 class UpstreamRejected extends Error {
   /** @param {unknown} cause */

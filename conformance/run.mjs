@@ -97,6 +97,9 @@ try {
       env: gatewayEnv,
     }));
     const before = gate.state.authorizations.length;
+    const bundlesBefore = gate.state.bundleFetches;
+    const capturesBefore = gate.state.captures.length;
+    const reportsBefore = gate.state.localReports;
     let out;
     try {
       out = await client.run({ ...process.env, CONFORMANCE_SPEC: specFile, CONFORMANCE_CASES: casesFile, NODE_NO_WARNINGS: '1' });
@@ -117,6 +120,10 @@ try {
     if (ran !== 1) problems.push(`the upstream ran ${ran} time(s); only the allowed call may run`);
     const asked = gate.state.authorizations.length - before;
     if (asked !== 3) problems.push(`MetaMynd was asked ${asked} time(s); the smuggled call must never be sent`);
+    // Every call is decided AT THE GATE (design §3.1, decision 4): never from a local bundle, never merely reported.
+    if (gate.state.bundleFetches !== bundlesBefore) problems.push('the guard fetched the policy bundle: it decided locally instead of at the gate');
+    if (gate.state.localReports !== reportsBefore) problems.push('a decision was only reported to MetaMynd, not made by the gate');
+    if (gate.state.captures.length - capturesBefore !== 1) problems.push(`captured ${gate.state.captures.length - capturesBefore} hold(s); the allowed call's must be captured`);
     if (problems.length) failed = true;
     rows.push({ client: client.name, outcome: problems.length ? `FAIL: ${problems.join('; ')}` : 'identical verdicts' });
   }

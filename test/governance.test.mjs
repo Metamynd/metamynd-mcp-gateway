@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createGuard } from '@metamynd/agentsafe-guard';
 import { parseConfig } from '../src/config.mjs';
-import { createGovernance } from '../src/governance.mjs';
+import { GUARD_OPTIONS, createGovernance } from '../src/governance.mjs';
 import { openJournal } from '../src/journal.mjs';
 import { installFakeGate, testAgent } from './fake-gate.mjs';
 
@@ -36,7 +36,7 @@ beforeEach(async () => {
   upstreamCalls = [];
   upstreamAnswer = () => ({ content: [{ type: 'text', text: 'done' }] });
   const { agentDid, agentKey } = await testAgent();
-  const guard = createGuard({ api: 'http://gate.test/api/v1', agentDid, agentKey, signContext: false });
+  const guard = createGuard({ api: 'http://gate.test/api/v1', agentDid, agentKey, signContext: false, ...GUARD_OPTIONS });
   const journal = await openJournal(path.join(await mkdtemp(path.join(os.tmpdir(), 'mcpgw-')), 'held.json'));
   governance = createGovernance({
     guard, journal,
@@ -63,6 +63,14 @@ test('a read moves nothing: authorized and captured at 0', async () => {
   assert.equal(gate.state.authorizations[0].action, 'records.read');
   assert.equal(gate.state.authorizations[0].amount ?? 0, 0);
   assert.deepEqual(gate.state.captures.map((c) => c.amount), [0]);
+});
+
+test('every call is decided at the gate, reads included: the policy bundle is never fetched to decide locally', async () => {
+  assert.equal(GUARD_OPTIONS.mode, 'remote');
+  await governance.call(READ, { customer: 'c-1' });
+  await governance.call(PAY, { amount: 5, currency: 'USD', payee: 'acme' });
+  assert.equal(gate.state.authorizations.length, 2);
+  assert.equal(gate.state.bundleFetches, 0, 'a local-first guard fetches the bundle and only reports its decision');
 });
 
 test('a refusal never reaches the tool and explains itself to the model', async () => {
