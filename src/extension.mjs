@@ -65,7 +65,7 @@ export function planExtension({ raw, agentFile, version, agentName, fields = {} 
   /** @type {Record<string, string>} */
   const env = {};
   if (needsAgentKey) {
-    userConfig[fieldFor(AGENT_KEY_ENV)] = { type: 'string', title: 'Agent key', description: 'The agent key from your MetaMynd agent file (agent.metamynd.json, "agentKey"). Stored securely by Claude.', sensitive: true, required: true };
+    userConfig[fieldFor(AGENT_KEY_ENV)] = { type: 'string', title: 'Agent key', description: 'The private key shown when you created the agent in MetaMynd (or "agentKey" in its agent.metamynd.json). Stored securely by Claude.', sensitive: true, required: true };
     env[AGENT_KEY_ENV] = `\${user_config.${fieldFor(AGENT_KEY_ENV)}}`;
   }
   for (const [name, s] of secrets) {

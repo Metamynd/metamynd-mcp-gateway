@@ -77,7 +77,7 @@ test('the built .mcpb passes the official mcpb validator and packs', { skip: !pr
 test('T1: every setup says to remove a direct connection to the same server, naming it', () => {
   const w = directAccessWarning('Cursor', ['Notion']);
   assert.match(w, /^If Notion is also set up in Cursor directly/);
-  assert.match(w, /remove it/);
+  assert.match(w, /remove it entirely: disconnecting is not enough/);
   assert.match(w, /without MetaMynd/);
-  assert.match(directAccessWarning('VS Code', []), /^If these tools are also set up in VS Code directly .*remove them\./);
+  assert.match(directAccessWarning('VS Code', []), /^If these tools are also set up in VS Code directly .*remove them entirely: .*still offer them to the AI\./);
 });

@@ -77,7 +77,7 @@ function quote(/** @type {string} */ a) {
 export function directAccessWarning(appTitle, servers) {
   const one = servers.length === 1;
   const list = servers.length ? servers.join(', ') : 'these tools';
-  return `If ${list} ${one ? 'is' : 'are'} also set up in ${appTitle} directly (its own entry in the app's MCP settings, an extension or a connector), remove ${one ? 'it' : 'them'}. While the app can reach a server directly, the AI can use it without MetaMynd.`;
+  return `If ${list} ${one ? 'is' : 'are'} also set up in ${appTitle} directly (its own entry in the app's MCP settings, an extension or a connector), remove ${one ? 'it' : 'them'} entirely: disconnecting is not enough, because the app can still offer ${one ? 'it' : 'them'} to the AI. While the app can reach a server directly, the AI can use it without MetaMynd.`;
 }
 
 /**

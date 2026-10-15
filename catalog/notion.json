@@ -11,7 +11,7 @@
     {
       "env": "NOTION_TOKEN",
       "title": "Notion integration token",
-      "description": "Create an internal integration at notion.so/my-integrations, copy its secret, and share the pages the agent may use with that integration."
+      "description": "In Notion, create a connection (notion.so/my-integrations, New connection) with the API token method, copy its API token, and give it access to only the pages the agent may use."
     }
   ],
   "actions": {
@@ -21,8 +21,8 @@
   },
   "serviceSetup": {
     "title": "Notion integration capabilities",
-    "where": "notion.so/my-integrations, your integration, Capabilities",
-    "scope": "Share only the pages and databases the agent needs: on each page, open the ••• menu, Connections, and add the integration. Pages you don't share stay out of reach, whatever the agent is granted.",
+    "where": "notion.so/my-integrations, your connection, Capabilities",
+    "scope": "Give the connection access to only the pages and databases the agent needs (in the connection's Access settings, or on each page: the ••• menu, Connections). Pages it can't access stay out of reach, whatever the agent is granted.",
     "byAction": {
       "notion-read": ["Read content", "Read comments", "Read user information without email addresses"],
       "notion-write": ["Insert content", "Update content", "Insert comments"],

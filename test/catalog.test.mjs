@@ -95,7 +95,7 @@ test('serviceSetupFor: only the service permissions the picked tools need, each 
   const readOnly = serviceSetupFor(catalog.values(), [{ id: 'notion', tools: ['API-post-search', 'API-retrieve-a-comment'] }]);
   assert.deepEqual(readOnly.map((s) => s.capabilities), [['Read content', 'Read comments', 'Read user information without email addresses']]);
   assert.equal(readOnly[0].server, 'Notion');
-  assert.match(readOnly[0].scope, /Share only the pages/);
+  assert.match(readOnly[0].scope, /access to only the pages/);
   const readWrite = serviceSetupFor(catalog.values(), [{ id: 'notion', tools: ['API-patch-block-children', 'API-post-search', 'API-delete-a-block'] }]);
   assert.deepEqual(readWrite[0].capabilities, ['Read content', 'Read comments', 'Read user information without email addresses', 'Insert content', 'Update content', 'Insert comments']);
   assert.deepEqual(serviceSetupFor(catalog.values(), [{ id: 'nope', tools: ['x'] }]), []);
