@@ -1,6 +1,6 @@
 # MetaMynd MCP Gateway
 
-**Status: 0.2.4, developer preview.** The design is in [docs/design.md](docs/design.md); what each AI app actually
+**Status: 0.2.5, developer preview.** The design is in [docs/design.md](docs/design.md); what each AI app actually
 does is in [docs/hosts.md](docs/hosts.md). Releases: [docs/releasing.md](docs/releasing.md) and the
 [release checklist](docs/release-checklist.md). Reviewed servers: [catalog/](catalog) (Notion, HubSpot, Brave Search).
 
