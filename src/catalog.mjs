@@ -17,7 +17,10 @@ const PIN_RE = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/;
  * @typedef {{ summary: string, action: string, effect: 'read'|'write'|'destructive', allowedArgs: string[], context: Record<string, unknown>, schemaHash: string, amount?: string, currency?: string, merchant?: string, onToolError?: string }} CatalogTool
  * @typedef {{ id: string, name: string, description: string, homepage?: string, server: { package: string, version: string, args?: string[] },
  *   credentials: Array<{ env: string, title: string, description: string }>, actions: Record<string, string>,
- *   probeEnv: Record<string, string>, reviewed: { by: string, on: string }, tools: Record<string, CatalogTool> }} CatalogEntry
+ *   probeEnv: Record<string, string>, reviewed: { by: string, on: string }, tools: Record<string, CatalogTool>,
+ *   serviceSetup?: ServiceSetup }} CatalogEntry
+ * @typedef {{ title: string, where: string, scope: string, byAction: Record<string, string[]> }} ServiceSetup the service's own
+ *   permissions to set on the credential, per action: the fence MetaMynd governs inside (docs/catalog.md)
  */
 
 /**
@@ -44,6 +47,18 @@ export function entryProblems(e) {
     if (typeof tool.summary !== 'string' || !tool.summary.trim()) p.push(`${where}.tools.${name}: needs a plain-language summary`);
     if (!tool.effect) p.push(`${where}.tools.${name}: needs a reviewed effect`);
     if (!(tool.action in actions)) p.push(`${where}.tools.${name}: action "${tool.action}" is not described in "actions"`);
+  }
+  if (e.serviceSetup !== undefined) {
+    const s = e.serviceSetup;
+    for (const f of ['title', 'where', 'scope']) if (typeof s?.[f] !== 'string' || !s[f].trim()) p.push(`${where}.serviceSetup: "${f}" is required`);
+    const byAction = s?.byAction ?? {};
+    for (const a of Object.keys(byAction)) if (!(a in actions)) p.push(`${where}.serviceSetup.byAction: "${a}" is not one of the entry's actions`);
+    for (const a of Object.keys(actions)) {
+      const caps = byAction[a];
+      if (!Array.isArray(caps) || caps.length === 0 || caps.some((c) => typeof c !== 'string' || !c.trim())) {
+        p.push(`${where}.serviceSetup.byAction: "${a}" needs the service permissions it takes (a non-empty list)`);
+      }
+    }
   }
   if (p.length) return p;
   try {
@@ -123,6 +138,28 @@ export function catalogPicksIn(catalog, raw) {
   return [...catalog]
     .filter((e) => Array.isArray(upstreams[e.id]?.args) && upstreams[e.id].args.includes(`${e.server.package}@${e.server.version}`))
     .map((e) => ({ id: e.id }));
+}
+
+/**
+ * What to set on each picked service's own side so its credential can do no more than the picked tools need: the
+ * service's permissions for the actions those tools use, in the catalog's order, each once. Least privilege at the
+ * source is the fence; MetaMynd decides each call inside it. Entries without `serviceSetup` are left out.
+ * @param {Iterable<CatalogEntry>} catalog
+ * @param {Array<{ id: string, tools: string[] }>} picks
+ * @returns {Array<{ id: string, server: string, title: string, where: string, scope: string, capabilities: string[] }>}
+ */
+export function serviceSetupFor(catalog, picks) {
+  const byId = new Map([...catalog].map((e) => [e.id, e]));
+  /** @type {Array<{ id: string, server: string, title: string, where: string, scope: string, capabilities: string[] }>} */
+  const out = [];
+  for (const pick of picks) {
+    const e = byId.get(pick.id);
+    if (!e?.serviceSetup) continue;
+    const used = new Set(pick.tools.map((t) => e.tools[t]?.action).filter(Boolean));
+    const caps = [...new Set(Object.keys(e.actions).filter((a) => used.has(a)).flatMap((a) => e.serviceSetup?.byAction[a] ?? []))];
+    out.push({ id: e.id, server: e.name, title: e.serviceSetup.title, where: e.serviceSetup.where, scope: e.serviceSetup.scope, capabilities: caps });
+  }
+  return out;
 }
 
 /** The keychain entry a catalog credential is stored under: `<id>-<env, lower-case, dashed>`. */

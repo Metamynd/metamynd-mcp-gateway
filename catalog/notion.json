@@ -19,6 +19,16 @@
     "notion-write": "Create and change pages, databases and comments",
     "notion-delete": "Delete blocks (moved to the trash)"
   },
+  "serviceSetup": {
+    "title": "Notion integration capabilities",
+    "where": "notion.so/my-integrations, your integration, Capabilities",
+    "scope": "Share only the pages and databases the agent needs: on each page, open the ••• menu, Connections, and add the integration. Pages you don't share stay out of reach, whatever the agent is granted.",
+    "byAction": {
+      "notion-read": ["Read content", "Read comments", "Read user information without email addresses"],
+      "notion-write": ["Insert content", "Update content", "Insert comments"],
+      "notion-delete": ["Update content"]
+    }
+  },
   "probeEnv": {
     "NOTION_TOKEN": "ntn_dummy0000000000000000000000000000000000000"
   },

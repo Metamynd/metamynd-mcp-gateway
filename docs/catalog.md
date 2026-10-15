@@ -16,8 +16,13 @@ tools' credentials: they are entered at install, in Claude Desktop (decision 3).
 | `probeEnv` | Dummy credentials that let CI start the server and list its tools — never real ones. |
 | `reviewed` | Who reviewed it, and when. |
 | `tools` | Every tool the server offers: `summary` (plain language), `action`, `effect` (`read` / `write` / `destructive`), `allowedArgs`, value fields (`amount`, `currency`, `merchant`) for tools that move money, `context.riskLevel`, and the pinned `schemaHash`. |
+| `serviceSetup` | Optional. The service's own permissions to set on the credential: `title`, `where` they are set, `scope` (which data to share with it), and `byAction`, the minimum permissions each action's tools need. Every action must be listed. The dashboard and `mcp-gateway extension` show the ones the picked tools need. |
 
 ## Rules
+
+- **Least privilege at the source too.** The gateway decides each call, but the credential is the outer fence: if anything
+  upstream were misconfigured, or the credential leaked, the service's own permissions are what remain. An entry's
+  `serviceSetup` says which permissions each action needs, so an owner who only grants reads creates a read-only credential.
 
 - **Every tool is reviewed by a person.** The server's own annotations are suggestions: Notion marks its search
   "destructive" (it only reads), and a server could mark a payment "read-only". The reviewer decides.

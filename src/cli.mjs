@@ -21,7 +21,7 @@ import { createGuardFromConfig } from '@metamynd/agentsafe-guard';
 import { ConfigError, loadConfig, parseDraftConfig } from './config.mjs';
 import { createGatewayServer } from './gateway.mjs';
 import { createGovernance } from './governance.mjs';
-import { catalogPicksIn, credentialFields, loadCatalog } from './catalog.mjs';
+import { catalogPicksIn, credentialFields, loadCatalog, serviceSetupFor } from './catalog.mjs';
 import { AGENT_KEY_ENV, buildExtension, composeExtension, planExtension } from './extension.mjs';
 import { HOSTS, hostSnippet } from './hosts.mjs';
 import { draftTools } from './init.mjs';
@@ -188,6 +188,15 @@ async function extension() {
     await buildExtension(plan, { outFile: out });
   }
   say(`Built ${out}. Double-click it to install in Claude Desktop; it will ask for ${Object.keys(plan.manifest.user_config ?? {}).length} credential(s), which Claude stores securely. Nothing secret is inside the file.`);
+  // The fence at the source: what each catalog service's own credential should be allowed, for the tools this config uses.
+  const toolPicks = catalogPicksIn(catalog, raw).map(({ id }) => ({
+    id,
+    tools: Object.keys(raw.tools ?? {}).filter((k) => k.startsWith(`${id}.`)).map((k) => k.slice(id.length + 1)),
+  }));
+  for (const s of serviceSetupFor(catalog, toolPicks)) {
+    say(`\n${s.server}: when you create the credential (${s.where}), turn on only: ${s.capabilities.join(', ')}.`);
+    say(s.scope);
+  }
 }
 
 async function ownVersion() {

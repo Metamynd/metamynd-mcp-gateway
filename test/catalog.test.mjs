@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ConfigError, parseConfig } from '../src/config.mjs';
-import { catalogPicksIn, configFromCatalog, credentialFields, entryProblems, loadCatalog } from '../src/catalog.mjs';
+import { catalogPicksIn, configFromCatalog, credentialFields, entryProblems, loadCatalog, serviceSetupFor } from '../src/catalog.mjs';
 import { planExtension } from '../src/extension.mjs';
 
 test('the shipped catalog loads, and every entry passes the gateway\'s own checks', async () => {
@@ -88,4 +88,27 @@ test('entryProblems catches what a reviewer could miss', () => {
   assert.match(entryProblems({ ...good, probeEnv: {} }).join(), /probeEnv must give a dummy DEMO_KEY/);
   assert.match(entryProblems({ ...good, tools: { pay: { ...good.tools.pay, action: 'ghost' } } }).join(), /not described in "actions"/);
   assert.match(entryProblems({ ...good, tools: { pay: { ...good.tools.pay, effect: 'read' } } }).join(), /moves an amount is not "read"/);
+});
+
+test('serviceSetupFor: only the service permissions the picked tools need, each once, in catalog order', async () => {
+  const catalog = await loadCatalog();
+  const readOnly = serviceSetupFor(catalog.values(), [{ id: 'notion', tools: ['API-post-search', 'API-retrieve-a-comment'] }]);
+  assert.deepEqual(readOnly.map((s) => s.capabilities), [['Read content', 'Read comments', 'Read user information without email addresses']]);
+  assert.equal(readOnly[0].server, 'Notion');
+  assert.match(readOnly[0].scope, /Share only the pages/);
+  const readWrite = serviceSetupFor(catalog.values(), [{ id: 'notion', tools: ['API-patch-block-children', 'API-post-search', 'API-delete-a-block'] }]);
+  assert.deepEqual(readWrite[0].capabilities, ['Read content', 'Read comments', 'Read user information without email addresses', 'Insert content', 'Update content', 'Insert comments']);
+  assert.deepEqual(serviceSetupFor(catalog.values(), [{ id: 'nope', tools: ['x'] }]), []);
+});
+
+test('entryProblems: a serviceSetup must cover every action, and only the entry\'s actions', async () => {
+  const notion = /** @type {any} */ ((await loadCatalog()).get('notion'));
+  assert.deepEqual(entryProblems(notion), []);
+  const missing = { ...notion, serviceSetup: { ...notion.serviceSetup, byAction: { 'notion-read': ['Read content'] } } };
+  assert.match(entryProblems(missing).join(), /"notion-write" needs the service permissions/);
+  const extra = { ...notion, serviceSetup: { ...notion.serviceSetup, byAction: { ...notion.serviceSetup.byAction, 'notion-pay': ['x'] } } };
+  assert.match(entryProblems(extra).join(), /"notion-pay" is not one of the entry's actions/);
+  assert.match(entryProblems({ ...notion, serviceSetup: { ...notion.serviceSetup, scope: '' } }).join(), /"scope" is required/);
+  const { serviceSetup: _s, ...without } = notion;
+  assert.deepEqual(entryProblems(without), []); // optional: an entry may leave it out
 });
