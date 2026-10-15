@@ -23,11 +23,11 @@ import { createGatewayServer } from './gateway.mjs';
 import { createGovernance } from './governance.mjs';
 import { catalogPicksIn, credentialFields, loadCatalog, serviceSetupFor } from './catalog.mjs';
 import { AGENT_KEY_ENV, buildExtension, composeExtension, planExtension } from './extension.mjs';
-import { HOSTS, hostSnippet } from './hosts.mjs';
+import { HOSTS, directAccessWarning, hostSnippet } from './hosts.mjs';
 import { draftTools } from './init.mjs';
 import { openJournal } from './journal.mjs';
 import { createKeychain } from './keychain.mjs';
-import { SecretError } from './secrets.mjs';
+import { resolveSecrets, SecretError } from './secrets.mjs';
 import { connectUpstreams, listAllTools, reconcileTools } from './upstreams.mjs';
 
 /** @param {Record<string, unknown>} entry */
@@ -58,9 +58,17 @@ async function serve() {
   if (typeof agentFile.agentKey === 'string' && agentFile.agentKey) {
     log({ event: 'warning', message: `${config.agentConfig} holds the agent's key in plain text; keep it in the signer daemon (keyProvider: "daemon") so no tool the AI can use can read it` });
   }
-  // A Claude Desktop extension passes the key it stored securely in MCPGW_AGENT_KEY (src/extension.mjs).
-  const envKey = process.env[AGENT_KEY_ENV];
-  const guard = await createGuardFromConfig(config.agentConfig, envKey ? { agentKey: envKey } : {});
+  // Where the key comes from: a Claude Desktop extension passes the one it stored securely in MCPGW_AGENT_KEY
+  // (src/extension.mjs); a gateway started from a folder names it in "agentKey" (keychain or environment); otherwise the
+  // agent file decides (signer daemon, or a plaintext key flagged above).
+  let agentKey = process.env[AGENT_KEY_ENV] || undefined;
+  if (!agentKey && config.agentKey) {
+    /** @type {string[]} */
+    const missing = [];
+    agentKey = (await resolveSecrets({ agentKey: config.agentKey }, 'mcp-gateway.json', sources, missing)).agentKey;
+    if (missing.length) throw new SecretError(missing);
+  }
+  const guard = await createGuardFromConfig(config.agentConfig, agentKey ? { agentKey } : {});
 
   const clients = await connectUpstreams(config, { sources });
   /** @type {Map<string, import('./upstreams.mjs').ToolDef[]>} */
@@ -162,11 +170,12 @@ async function config() {
     say(`usage: mcp-gateway config --host <${Object.keys(HOSTS).join(' | ')}> --config <file>`);
     return;
   }
-  await loadConfig(file); // only a reviewed, valid config is worth installing
+  const parsed = await loadConfig(file); // only a reviewed, valid config is worth installing
   const { title, where, snippet } = hostSnippet(values.host, { configPath: path.resolve(file), version: await ownVersion() });
   say(`${title} — ${where}:\n`);
   process.stdout.write(`${snippet}\n`);
   say('\nThe tools\' keys are not in this snippet: store each with `mcp-gateway secret set <name>` and reference it as keychain:<name>.');
+  say(`\n${directAccessWarning(title, Object.keys(parsed.upstreams))}`);
 }
 
 async function extension() {
@@ -197,6 +206,7 @@ async function extension() {
     say(`\n${s.server}: when you create the credential (${s.where}), turn on only: ${s.capabilities.join(', ')}.`);
     say(s.scope);
   }
+  say(`\n${directAccessWarning('Claude Desktop', Object.keys(raw.upstreams ?? {}))}`);
 }
 
 async function ownVersion() {

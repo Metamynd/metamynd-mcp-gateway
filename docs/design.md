@@ -1,6 +1,8 @@
 # MetaMynd MCP Gateway — governing any MCP host without code
 
-**Status:** Design — decided, not yet built. **Package:** `@metamynd/mcp-gateway` · **Repository:**
+**Status:** Phase 1 built (0.1.0–0.2.3, October 2026): the local gateway, held requests, `init`, host snippets, the
+Claude Desktop extension, the curated catalog and the dashboard's "Connect to …". Open in phase 1: conformance runs with
+real framework clients and the GUI release checklist (§9). Phases 2–4 not started. **Package:** `@metamynd/mcp-gateway` · **Repository:**
 [Metamynd/metamynd-mcp-gateway](https://github.com/Metamynd/metamynd-mcp-gateway) · **Editors:** MetaMynd
 
 Builds on [MAGP v1.0](https://metamynd.ai/developers/spec) and the published MetaMynd SDKs in
@@ -20,6 +22,9 @@ changes nothing in the MetaMynd gate, the protocol or its APIs.
 | 3 | Will MetaMynd host gateways? | **No.** The gateway runs on the user's machine, or on the customer's own server. MetaMynd never holds customers' upstream credentials. |
 | 4 | Which tools are governed? | **Every tool**, reads included, so the audit trail is complete. A tool is either governed or not offered. |
 | 5 | Name and home | npm **`@metamynd/mcp-gateway`** (scoped, so the name can't be squatted), in its own public repository **`Metamynd/metamynd-mcp-gateway`**, MIT. New MetaMynd packages each get their own repository from now on. |
+| 6 | How does the dashboard know a server's tools? (2026-10-14) | A **curated catalog** of servers MetaMynd has reviewed tool by tool ([catalog.md](catalog.md)); a browser can't run the owner's servers, and MetaMynd must not hold their credentials. |
+| 7 | Can a tool count as another granted action? (2026-10-15) | **No. Mandates are specific to the tool.** A tool runs only under its own catalog action (`notion-read`, `notion-write`, …); the owner grants that action. Re-labelling (a Notion read counting as `flight-purchase`) would let one grant authorize something else and record the wrong action as evidence, so it is refused (`ACTION_REMAP_REFUSED`). |
+| 8 | What about the service's own permissions? (2026-10-15) | **Set them too, to match.** They are the outer fence if anything upstream failed. The catalog says which each action needs (`serviceSetup`), and setup lists them for the picked tools. |
 
 ## 1. Problem
 
@@ -170,6 +175,8 @@ settle in delegated mode, so the request is checked at both ends.
 - Value fields name tool arguments (dotted paths for nested ones). A read maps none.
 - `effect` is optional; a tool that moves an amount can never be `"read"`.
 - Secrets come from `keychain:<name>` (the OS keychain) or `${VAR}` (the environment); never written in the file.
+- `agentKey` (optional) names where the agent's key comes from when an app starts the gateway from a folder:
+  `keychain:<name>` or `${VAR}`, never the key itself. A Claude Desktop extension passes it in `MCPGW_AGENT_KEY` instead.
 - The gateway refuses to start if an upstream has no credential configured.
 
 ### 4.2 Drafting the mapping
@@ -212,15 +219,24 @@ A browser cannot run the owner's MCP servers to read their tools, and MetaMynd m
 dashboard works from a **curated catalog** (decided 2026-10-14; [catalog.md](catalog.md)): servers MetaMynd has
 reviewed tool by tool, each pinned to an exact version and re-checked by CI against the real server.
 
-1. In the MetaMynd dashboard, on the agent's page: **Connect to Claude Desktop** (and other hosts).
+1. In the MetaMynd dashboard, on the agent's page: **Connect to an AI app** (Claude Desktop, Claude Code, Cursor,
+   VS Code).
 2. Add the tools: pick servers from the catalog and tick the tools the agent may use, each shown in plain language
-   ("*Create a page* — changes your workspace; *Search pages* — read-only"); match the catalog's actions to the agent's
-   mandate.
-3. Download the extension (or, for other hosts, copy the generated snippet). The snippet always pins a scoped version:
-   `npx -y @metamynd/mcp-gateway@x.y.z`.
-4. Install: double-click the extension; enter each tool's API key when asked. Claude stores them securely; MetaMynd
-   never sees them.
-5. Restart the app and use it as before. Allowed calls just work; refusals and held requests are explained in the
+   ("*Create a page* — changes your workspace; *Search pages* — read-only"). For any tool whose own action the agent's
+   mandate does not grant, **grant that action** (decision 7); there is no mapping to another action.
+3. Create each service's credential with only the permissions the picked tools need (decision 8; the dashboard lists
+   them, e.g. Notion's *Read content* and *Read comments* for read-only tools) and share only the data the agent needs.
+4. Install:
+   - **Claude Desktop:** download the extension and double-click it; enter the agent key and each tool's credential when
+     asked. Claude stores them securely.
+   - **Claude Code, Cursor, VS Code:** download the agent's folder (`mcp-gateway.json` and the agent file, no secrets),
+     store the agent key and each credential in the OS keychain with `mcp-gateway secret set <name>`, and add the
+     generated snippet. The snippet always pins a scoped version: `npx -y @metamynd/mcp-gateway@x.y.z`.
+
+   MetaMynd never sees the credentials or the agent key.
+5. **Remove any direct connection** to the same servers from the app (T1): while the app can reach a server directly,
+   the AI can use it without MetaMynd.
+6. Restart the app and use it as before. Allowed calls just work; refusals and held requests are explained in the
    chat; everything appears in the MetaMynd activity log.
 
 ## 6. Threat model
@@ -257,8 +273,8 @@ There is no MetaMynd-hosted mode (decision 3).
 |---|---|
 | **This repository** | The gateway: MCP server, upstream clients, mapping, settlement, journal, `init` and `config --host` commands, the Claude Desktop extension, its own CI and npm release. Depends on the published `@metamynd/*` SDKs from npm. |
 | `@metamynd/agentsafe-signer` | Add `sign-resume-claim` (§3.3). |
-| `@metamynd/agentsafe-guard` | Export the payload-binding helpers (today re-exported only by `agentsafe-mcp-guard`). |
-| MetaMynd dashboard | "Connect to …" on the agent page: tool picker, mapping review, extension download, per-host snippets. Display and onboarding only. |
+| `@metamynd/agentsafe-guard` | ~~Export the payload-binding helpers~~ Not needed: the gateway calls `guardTool`, which binds the payload itself. |
+| MetaMynd dashboard | "Connect to …" on the agent page: tool picker, per-tool grants, service permissions to set, extension download, per-host folder and snippets. Display and onboarding only. |
 | MetaMynd docs | Overview, per-host setup, mapping reference. |
 
 The MetaMynd gate, mandates, evidence and APIs are unchanged.
@@ -268,7 +284,7 @@ The MetaMynd gate, mandates, evidence and APIs are unchanged.
 | Phase | Scope | Done when |
 |---|---|---|
 | 0 | Spikes: each phase-1 host's transport, tool-name limits, timeouts and error display; `.mcpb` packaging; `sign-resume-claim` in the signer | **Done 2026-10-14:** [hosts.md](hosts.md); `sign-resume-claim` in `@metamynd/agentsafe-signer` 0.23.0 (released with the next MetaMynd tag) |
-| 1 | Local gateway; held requests and resume; `init`; the **Claude Desktop extension**; dashboard "Connect to …"; snippets for Claude Code, Cursor, VS Code; OpenAI Agents SDK and LangGraph | A non-technical user reaches a first governed action in < 5 minutes from the dashboard alone; the bypass tests show no upstream execution without an allow |
+| 1 | Local gateway; held requests and resume; `init`; the **Claude Desktop extension**; dashboard "Connect to …"; snippets for Claude Code, Cursor, VS Code; OpenAI Agents SDK and LangGraph | A non-technical user reaches a first governed action in < 5 minutes from the dashboard alone; the bypass tests show no upstream execution without an allow. **Built** (0.1.0–0.2.3, dashboard in MetaMynd v1.95+); the bypass tests pass with the MCP SDK client. **Open:** a timed first-action run with a real Claude Desktop install, conformance runs with real framework clients (§10), and the GUI checklist. |
 | 2 | More hosts' snippets and guides (Windsurf, Zed, Cline, CrewAI, ADK, …) | Each listed host has a tested guide |
 | 3 | Self-hosted remote mode: Streamable HTTP, OAuth, Docker image | ChatGPT and one workflow tool governed through a customer-run gateway |
 | 4 | Delegated chaining with `agentsafe-mcp-guard` upstreams; several agents per remote gateway | — |

@@ -33,8 +33,11 @@ const SECRET_REF_RE = /\$\{[A-Z_][A-Z0-9_]*\}|^keychain:[A-Za-z0-9._-]+$/;
  *   allowedArgs: string[], context: Record<string, unknown>, schemaHash: string, onToolError: 'capture' | 'void',
  *   effect?: 'read' | 'write' | 'destructive'
  * }} ToolMapping
- * @typedef {{ agentConfig: string, upstreams: Record<string, Upstream>, tools: Map<string, ToolMapping>, escalationWaitMs: number, warnings: string[] }} GatewayConfig
+ * @typedef {{ agentConfig: string, agentKey?: string, upstreams: Record<string, Upstream>, tools: Map<string, ToolMapping>, escalationWaitMs: number, warnings: string[] }} GatewayConfig
+ *   agentKey: where the agent's key comes from, as a reference only (`keychain:<name>` or `\${VAR}`), never the key
  */
+
+const AGENT_KEY_REF_RE = /^(keychain:[A-Za-z0-9._-]+|\$\{[A-Z_][A-Z0-9_]*\})$/;
 
 export class ConfigError extends Error {
   /** @param {string[]} problems */
@@ -97,13 +100,20 @@ export function parseConfig(raw, baseDir = process.cwd()) {
     problems.push(`"escalationWaitMs": whole milliseconds from 0 to ${MAX_ESCALATION_WAIT_MS} (apps give up on a tool call after about a minute)`);
   }
 
+  // The agent's key, for a gateway an AI app starts from a folder (Cursor, VS Code, Claude Code): a reference the
+  // gateway resolves at start, so neither this file nor the app's own config ever holds the key itself (T3).
+  const agentKey = raw.agentKey;
+  if (agentKey !== undefined && !(typeof agentKey === 'string' && AGENT_KEY_REF_RE.test(agentKey))) {
+    problems.push('"agentKey": a reference only, "keychain:<name>" or "${VAR}"; never the key itself');
+  }
+
   if (problems.length) throw new ConfigError(problems);
   /** @type {string[]} */
   const warnings = [];
   if (tools.size > TOOL_COUNT_WARNING) {
     warnings.push(`${tools.size} tools are governed; some apps show only about ${TOOL_COUNT_WARNING} in total, so offer fewer if tools go missing`);
   }
-  return { agentConfig, upstreams, tools, escalationWaitMs: /** @type {number} */ (escalationWaitMs), warnings };
+  return { agentConfig, ...(agentKey ? { agentKey: /** @type {string} */ (agentKey) } : {}), upstreams, tools, escalationWaitMs: /** @type {number} */ (escalationWaitMs), warnings };
 }
 
 /**

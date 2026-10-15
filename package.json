@@ -67,6 +67,10 @@
       "types": "./types/extension.d.mts",
       "default": "./src/extension.mjs"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./hosts": {
+      "types": "./types/hosts.d.mts",
+      "default": "./src/hosts.mjs"
+    }
   }
 }

@@ -69,6 +69,18 @@ function quote(/** @type {string} */ a) {
 }
 
 /**
+ * T1 (docs/design.md §6): a server the app can still reach directly is not governed. Every setup ends by saying so,
+ * naming the servers the gateway now fronts.
+ * @param {string} appTitle e.g. "Claude Desktop"
+ * @param {string[]} servers e.g. ["Notion"]
+ */
+export function directAccessWarning(appTitle, servers) {
+  const one = servers.length === 1;
+  const list = servers.length ? servers.join(', ') : 'these tools';
+  return `If ${list} ${one ? 'is' : 'are'} also set up in ${appTitle} directly (its own entry in the app's MCP settings, an extension or a connector), remove ${one ? 'it' : 'them'}. While the app can reach a server directly, the AI can use it without MetaMynd.`;
+}
+
+/**
  * @param {string} host
  * @param {SnippetInput} input
  */

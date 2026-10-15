@@ -94,10 +94,13 @@ export async function loadCatalog(dir = CATALOG_DIR) {
  * (`${ENV}`, which the Claude Desktop extension turns into fields Claude stores securely; or `keychain:<id>-<env>`).
  * `actionMap` renames catalog actions to the agent's own mandate actions.
  * @param {Iterable<CatalogEntry>} catalog
- * @param {{ agentConfig: string, picks: Array<{ id: string, tools: string[] }>, actionMap?: Record<string, string>, credentials?: 'env' | 'keychain' }} opts
+ * `keychainPrefix` (keychain form) puts each credential under `<prefix><id>-<env>`, so two agents on one computer never
+ * share a credential, each scoped to its own tools. `agentKey` is the reference the gateway reads the agent's key from
+ * (`keychain:<name>` or `\${VAR}`) when an app starts it from a folder; config.mjs refuses anything else.
+ * @param {{ agentConfig: string, picks: Array<{ id: string, tools: string[] }>, actionMap?: Record<string, string>, credentials?: 'env' | 'keychain', keychainPrefix?: string, agentKey?: string }} opts
  * @returns {Record<string, any>} the config, already checked with parseConfig
  */
-export function configFromCatalog(catalog, { agentConfig, picks, actionMap = {}, credentials = 'env' }) {
+export function configFromCatalog(catalog, { agentConfig, picks, actionMap = {}, credentials = 'env', keychainPrefix = '', agentKey }) {
   const byId = new Map([...catalog].map((e) => [e.id, e]));
   /** @type {Record<string, any>} */
   const upstreams = {};
@@ -111,7 +114,7 @@ export function configFromCatalog(catalog, { agentConfig, picks, actionMap = {},
     upstreams[e.id] = {
       command: 'npx',
       args: ['-y', `${e.server.package}@${e.server.version}`, ...(e.server.args ?? [])],
-      env: Object.fromEntries(e.credentials.map((c) => [c.env, credentials === 'keychain' ? `keychain:${keychainName(e, c)}` : `\${${c.env}}`])),
+      env: Object.fromEntries(e.credentials.map((c) => [c.env, credentials === 'keychain' ? `keychain:${keychainPrefix}${keychainName(e, c)}` : `\${${c.env}}`])),
     };
     for (const name of pick.tools) {
       const t = e.tools[name];
@@ -121,7 +124,7 @@ export function configFromCatalog(catalog, { agentConfig, picks, actionMap = {},
     }
   }
   if (problems.length) throw new ConfigError(problems);
-  const config = { agentConfig, upstreams, tools };
+  const config = { agentConfig, ...(agentKey ? { agentKey } : {}), upstreams, tools };
   parseConfig(config, '/'); // the same checks the gateway makes at start
   return config;
 }

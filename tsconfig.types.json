@@ -7,5 +7,5 @@
     "outDir": "types",
     "rootDir": "src"
   },
-  "include": ["src/catalog.mjs", "src/extension.mjs", "src/config.mjs", "src/schema-hash.mjs"]
+  "include": ["src/catalog.mjs", "src/extension.mjs", "src/config.mjs", "src/schema-hash.mjs", "src/hosts.mjs"]
 }

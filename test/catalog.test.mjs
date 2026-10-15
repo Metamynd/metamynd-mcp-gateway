@@ -112,3 +112,13 @@ test('entryProblems: a serviceSetup must cover every action, and only the entry\
   const { serviceSetup: _s, ...without } = notion;
   assert.deepEqual(entryProblems(without), []); // optional: an entry may leave it out
 });
+test('configFromCatalog for a folder-started app: per-agent keychain names, and the agent key as a reference', async () => {
+  const catalog = await loadCatalog();
+  const raw = configFromCatalog(catalog.values(), {
+    agentConfig: './agent.metamynd.json', picks: [{ id: 'notion', tools: ['API-post-search'] }],
+    credentials: 'keychain', keychainPrefix: 'metamynd-docs-helper-', agentKey: 'keychain:metamynd-docs-helper-agent-key',
+  });
+  assert.deepEqual(raw.upstreams.notion.env, { NOTION_TOKEN: 'keychain:metamynd-docs-helper-notion-notion-token' });
+  assert.equal(raw.agentKey, 'keychain:metamynd-docs-helper-agent-key');
+  assert.equal(parseConfig(raw, '/').agentKey, 'keychain:metamynd-docs-helper-agent-key');
+});

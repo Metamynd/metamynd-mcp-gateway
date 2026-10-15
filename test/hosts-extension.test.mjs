@@ -6,7 +6,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { HOSTS, PACKAGE, hostSnippet } from '../src/hosts.mjs';
+import { HOSTS, PACKAGE, directAccessWarning, hostSnippet } from '../src/hosts.mjs';
 import { AGENT_KEY_ENV, buildExtension, planExtension } from '../src/extension.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -72,4 +72,12 @@ test('the built .mcpb passes the official mcpb validator and packs', { skip: !pr
   const out = path.join(dir, 'test.mcpb');
   await buildExtension(plan, { outFile: out, packageRoot: path.join(here, '..') });
   assert.ok(existsSync(out));
+});
+
+test('T1: every setup says to remove a direct connection to the same server, naming it', () => {
+  const w = directAccessWarning('Cursor', ['Notion']);
+  assert.match(w, /^If Notion is also set up in Cursor directly/);
+  assert.match(w, /remove it/);
+  assert.match(w, /without MetaMynd/);
+  assert.match(directAccessWarning('VS Code', []), /^If these tools are also set up in VS Code directly .*remove them\./);
 });

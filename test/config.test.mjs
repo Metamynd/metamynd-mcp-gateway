@@ -119,3 +119,10 @@ test('every problem is reported at once', () => {
   has(p, '"upstreams" must list');
   has(p, '"tools" must map');
 });
+
+test('"agentKey" is a reference only: keychain or environment, never the key itself (T3)', () => {
+  assert.equal(parseConfig({ ...valid(), agentKey: 'keychain:metamynd-docs-helper-agent-key' }, '/cfg').agentKey, 'keychain:metamynd-docs-helper-agent-key');
+  assert.equal(parseConfig({ ...valid(), agentKey: '${MCPGW_AGENT_KEY}' }, '/cfg').agentKey, '${MCPGW_AGENT_KEY}');
+  assert.equal(parseConfig(valid(), '/cfg').agentKey, undefined);
+  for (const bad of ['3a1f'.repeat(16), 'prefix-${KEY}', 'keychain:', 42]) has(problemsOf({ ...valid(), agentKey: bad }), '"agentKey": a reference only');
+});
