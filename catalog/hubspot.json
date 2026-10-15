@@ -1,0 +1,356 @@
+{
+  "id": "hubspot",
+  "name": "HubSpot",
+  "description": "Read and update contacts, companies, deals, tickets, notes and tasks in a HubSpot CRM, through HubSpot's official MCP server (beta).",
+  "homepage": "https://www.npmjs.com/package/@hubspot/mcp-server",
+  "server": {
+    "package": "@hubspot/mcp-server",
+    "version": "0.4.0"
+  },
+  "credentials": [
+    {
+      "env": "PRIVATE_APP_ACCESS_TOKEN",
+      "title": "HubSpot private app access token",
+      "description": "In HubSpot: Settings, Integrations, Private Apps, Create private app. Give it only the scopes listed in the setup steps, then copy its access token."
+    }
+  ],
+  "actions": {
+    "hubspot-read": "Read CRM records, their associations and properties, engagements, schemas and workflows",
+    "hubspot-write": "Create and update CRM records, associations, notes and tasks",
+    "hubspot-schema": "Create and change CRM properties (the fields every record has)"
+  },
+  "serviceSetup": {
+    "title": "HubSpot private app scopes",
+    "where": "HubSpot Settings, Integrations, Private Apps, your app, Scopes",
+    "scope": "Tick these only for the objects the agent works with (for example contacts and companies, not every object). HubSpot suggests starting read-only.",
+    "byAction": {
+      "hubspot-read": [
+        "crm.objects.<object>.read for each object the agent reads",
+        "crm.schemas.<object>.read for those objects",
+        "automation, only if it reads workflows"
+      ],
+      "hubspot-write": [
+        "crm.objects.<object>.write for each object the agent may change"
+      ],
+      "hubspot-schema": [
+        "crm.schemas.<object>.write for each object whose properties it may change"
+      ]
+    }
+  },
+  "probeEnv": {
+    "PRIVATE_APP_ACCESS_TOKEN": "dummy-token-for-listing-tools"
+  },
+  "reviewed": {
+    "by": "MetaMynd",
+    "on": "2026-10-15"
+  },
+  "tools": {
+    "hubspot-get-user-details": {
+      "summary": "Show which HubSpot account and user this is",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:5ffa0860c9b3c2bd5bb2d3d3509a59caefaab09d4d2c10500c36b93e1751ec25"
+    },
+    "hubspot-list-objects": {
+      "summary": "List CRM records of one type",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "objectType",
+        "limit",
+        "after",
+        "properties",
+        "associations",
+        "archived"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:90807928e49fbcfb896249c45c65513dba5dcded9e36c6405e80c3bfddb952c8"
+    },
+    "hubspot-search-objects": {
+      "summary": "Search CRM records",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "objectType",
+        "query",
+        "limit",
+        "after",
+        "properties",
+        "sorts",
+        "filterGroups"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:fb13fc5502d8aa5b17a5e232a5b566f23b22ce5cdc66d822ff34e755e07e1303"
+    },
+    "hubspot-batch-create-associations": {
+      "summary": "Link CRM records to each other",
+      "action": "hubspot-write",
+      "effect": "write",
+      "allowedArgs": [
+        "fromObjectType",
+        "toObjectType",
+        "types",
+        "inputs"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:766d11081a6e38cda790ac5731add0b2f108a2438ba0de4c8f444beb5a1a19f0"
+    },
+    "hubspot-get-association-definitions": {
+      "summary": "Read how two record types can be linked",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "fromObjectType",
+        "toObjectType"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:aa9da7562f05872d00c68f9bf3a3a8d72d98fd5620f86f08c74df903f9cdd554"
+    },
+    "hubspot-list-associations": {
+      "summary": "List the records linked to a record",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "objectType",
+        "objectId",
+        "toObjectType",
+        "after"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:799401427270ec17ac6955633f81f363e8ae65cab57397acbba2c50fc6c9cc19"
+    },
+    "hubspot-batch-create-objects": {
+      "summary": "Create CRM records",
+      "action": "hubspot-write",
+      "effect": "write",
+      "allowedArgs": [
+        "objectType",
+        "inputs"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:24039f426fea628b5b23cd0254473ee166dfadd7e6688bcb0ceaad94c9917c03"
+    },
+    "hubspot-batch-update-objects": {
+      "summary": "Change CRM records",
+      "action": "hubspot-write",
+      "effect": "destructive",
+      "allowedArgs": [
+        "objectType",
+        "inputs"
+      ],
+      "context": {
+        "riskLevel": "high"
+      },
+      "schemaHash": "sha256:ae35daa87be15da1ce5f79a74fb01c09c99cb73d13576269c9254d47dce1977f"
+    },
+    "hubspot-batch-read-objects": {
+      "summary": "Read CRM records by ID",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "objectType",
+        "inputs",
+        "properties",
+        "propertiesWithHistory"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:56c0f83aaf848dfd022c8406d3f69fe93b33df807ee3280c98565e7db3eb255d"
+    },
+    "hubspot-list-properties": {
+      "summary": "List the properties of a record type",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "objectType",
+        "archived",
+        "includeHidden"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:32c65d6e313285d0f26d21e8f36c861397b844e4bd753e6965cd9b60a0b1c749"
+    },
+    "hubspot-get-property": {
+      "summary": "Read one property's definition",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "objectType",
+        "propertyName"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:c8345c3cfee10b50fc7fd1619495ca0362512d543df530dded6f5faca28bcb96"
+    },
+    "hubspot-create-property": {
+      "summary": "Create a CRM property",
+      "action": "hubspot-schema",
+      "effect": "write",
+      "allowedArgs": [
+        "objectType",
+        "name",
+        "label",
+        "description",
+        "groupName",
+        "type",
+        "fieldType",
+        "options",
+        "formField",
+        "hidden",
+        "displayOrder",
+        "hasUniqueValue",
+        "calculationFormula",
+        "externalOptions"
+      ],
+      "context": {
+        "riskLevel": "high"
+      },
+      "schemaHash": "sha256:1348ef9839bdb6c508a5921c05d041e4b11fe665ddead83606aae9bc420fb2f1"
+    },
+    "hubspot-update-property": {
+      "summary": "Change a CRM property's definition",
+      "action": "hubspot-schema",
+      "effect": "destructive",
+      "allowedArgs": [
+        "objectType",
+        "propertyName",
+        "label",
+        "description",
+        "groupName",
+        "type",
+        "fieldType",
+        "options",
+        "formField",
+        "hidden",
+        "displayOrder",
+        "calculationFormula"
+      ],
+      "context": {
+        "riskLevel": "high"
+      },
+      "schemaHash": "sha256:2ef80431c556e7b2401ccaa96d2393a4b7e126ba48c06ede67df6c120dd9f5d7"
+    },
+    "hubspot-create-engagement": {
+      "summary": "Add a note or task to a record",
+      "action": "hubspot-write",
+      "effect": "write",
+      "allowedArgs": [
+        "type",
+        "ownerId",
+        "timestamp",
+        "associations",
+        "metadata"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:bcf3bfa44cc0d5236cd78c249565174cbb29386786edc6e61123c53c09802b73"
+    },
+    "hubspot-get-engagement": {
+      "summary": "Read a note or task",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "engagementId"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:cf25666a600fb1683ec6809b0018cdc3a79495f642e9f6df3e4c3a387eb08508"
+    },
+    "hubspot-update-engagement": {
+      "summary": "Change a note or task",
+      "action": "hubspot-write",
+      "effect": "destructive",
+      "allowedArgs": [
+        "engagementId",
+        "ownerId",
+        "timestamp",
+        "metadata",
+        "associations"
+      ],
+      "context": {
+        "riskLevel": "medium"
+      },
+      "schemaHash": "sha256:952ab1e6becfe10a79fc9f41367381a50d4316396295cb0f5fbe9933aa385a8b"
+    },
+    "hubspot-generate-feedback-link": {
+      "summary": "Get a link to send HubSpot feedback about these tools",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:ac4c1505a00f5e7edecc25cbd30f84a5ec81ad1cbb7672e31eb89d990b2bdd6e"
+    },
+    "hubspot-get-schemas": {
+      "summary": "Read the account's custom record types",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:888f16bc469a7a2e5d9a314b29fa06893c399d1ecb72964504dda680f4c53ca4"
+    },
+    "hubspot-get-link": {
+      "summary": "Make a link to a record or list in HubSpot",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "portalId",
+        "uiDomain",
+        "pageRequests"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:13129e6bb8429ae4bcfd16d827b4b066dae199c8475d46b011325c40e1f6f1ee"
+    },
+    "hubspot-list-workflows": {
+      "summary": "List workflows",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "limit",
+        "after"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:3c41e5fa46f478aec078f2fe55236b87bedfe460dd9fc49b9201e1ae0c7ba4d5"
+    },
+    "hubspot-get-workflow": {
+      "summary": "Read a workflow",
+      "action": "hubspot-read",
+      "effect": "read",
+      "allowedArgs": [
+        "flowId"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:88d3150c06f8cae05891155bc3a0980a166452eace27d3f58611282138b24135"
+    }
+  }
+}

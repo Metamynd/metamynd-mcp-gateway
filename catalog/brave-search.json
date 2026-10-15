@@ -1,0 +1,211 @@
+{
+  "id": "brave-search",
+  "name": "Brave Search",
+  "description": "Search the web, news, images, videos and places with Brave Search, through Brave's official MCP server. Read-only; what the agent searches for is sent to Brave.",
+  "homepage": "https://github.com/brave/brave-search-mcp-server",
+  "server": {
+    "package": "@brave/brave-search-mcp-server",
+    "version": "2.1.4"
+  },
+  "credentials": [
+    {
+      "env": "BRAVE_API_KEY",
+      "title": "Brave Search API key",
+      "description": "Create a key at api-dashboard.search.brave.com (the free plan works for web search; local search needs a Pro plan)."
+    }
+  ],
+  "actions": {
+    "web-search": "Search the web, news, images, videos and places, and summarize the results"
+  },
+  "probeEnv": {
+    "BRAVE_API_KEY": "BSA_dummy0000000000000000000000"
+  },
+  "reviewed": {
+    "by": "MetaMynd",
+    "on": "2026-10-15"
+  },
+  "tools": {
+    "brave_web_search": {
+      "summary": "Search the web",
+      "action": "web-search",
+      "effect": "read",
+      "allowedArgs": [
+        "query",
+        "country",
+        "search_lang",
+        "ui_lang",
+        "count",
+        "offset",
+        "safesearch",
+        "freshness",
+        "text_decorations",
+        "spellcheck",
+        "result_filter",
+        "goggles",
+        "units",
+        "extra_snippets",
+        "summary"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:83db8d13e42d090c679ded143783a80bce55864645bf1caa0d01e371a733a35d"
+    },
+    "brave_local_search": {
+      "summary": "Search for local businesses and places (Pro plan)",
+      "action": "web-search",
+      "effect": "read",
+      "allowedArgs": [
+        "query",
+        "country",
+        "search_lang",
+        "ui_lang",
+        "count",
+        "offset",
+        "safesearch",
+        "freshness",
+        "text_decorations",
+        "spellcheck",
+        "result_filter",
+        "goggles",
+        "units",
+        "extra_snippets",
+        "summary"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:70d5db16f0fe3d651bdc75df0c84280c8e0ad93c6e58060c1c4d9593fb107daa"
+    },
+    "brave_video_search": {
+      "summary": "Search for videos",
+      "action": "web-search",
+      "effect": "read",
+      "allowedArgs": [
+        "query",
+        "country",
+        "search_lang",
+        "ui_lang",
+        "count",
+        "offset",
+        "spellcheck",
+        "safesearch",
+        "freshness"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:715cfa6219591f1e35f3f0041df48ff84b8527915f12e2da11264ee4c884733b"
+    },
+    "brave_image_search": {
+      "summary": "Search for images",
+      "action": "web-search",
+      "effect": "read",
+      "allowedArgs": [
+        "query",
+        "country",
+        "search_lang",
+        "count",
+        "safesearch",
+        "spellcheck"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:86281c2a3753048f39dd74b4610397a8a134bc3b7429839e177998a3ba7e3744"
+    },
+    "brave_news_search": {
+      "summary": "Search the news",
+      "action": "web-search",
+      "effect": "read",
+      "allowedArgs": [
+        "query",
+        "country",
+        "search_lang",
+        "ui_lang",
+        "count",
+        "offset",
+        "spellcheck",
+        "safesearch",
+        "freshness",
+        "extra_snippets",
+        "goggles"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:351b12f351b218c8b0c6697ad2c29b608f65e576cd1f49cc3ae424f88542f504"
+    },
+    "brave_summarizer": {
+      "summary": "Summarize a search's results",
+      "action": "web-search",
+      "effect": "read",
+      "allowedArgs": [
+        "key",
+        "entity_info",
+        "inline_references"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:a7d20f540ede90d2c9457b3771d6b54871a6253b8dbf07a7e1f4b7040e0745fe"
+    },
+    "brave_llm_context": {
+      "summary": "Fetch the text of the best web pages for a question",
+      "action": "web-search",
+      "effect": "read",
+      "allowedArgs": [
+        "query",
+        "country",
+        "search_lang",
+        "count",
+        "spellcheck",
+        "maximum_number_of_urls",
+        "maximum_number_of_tokens",
+        "maximum_number_of_snippets",
+        "context_threshold_mode",
+        "maximum_number_of_tokens_per_url",
+        "maximum_number_of_snippets_per_url",
+        "goggles",
+        "freshness",
+        "enable_local",
+        "enable_source_metadata",
+        "x-loc-lat",
+        "x-loc-long",
+        "x-loc-city",
+        "x-loc-state",
+        "x-loc-state-name",
+        "x-loc-country",
+        "x-loc-postal-code"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:b480d5410024e7ee23c60da0ba16ab1f3d5b35f3ddb75fa224d6f5062f2a4a92"
+    },
+    "brave_place_search": {
+      "summary": "Search for places near a location",
+      "action": "web-search",
+      "effect": "read",
+      "allowedArgs": [
+        "query",
+        "radius",
+        "count",
+        "latitude",
+        "longitude",
+        "location",
+        "country",
+        "search_lang",
+        "ui_lang",
+        "units",
+        "safesearch",
+        "spellcheck",
+        "geoloc"
+      ],
+      "context": {
+        "riskLevel": "low"
+      },
+      "schemaHash": "sha256:47e9e9e012b6ba8bf6cc529310c19cf67e1305ffa71acbd9aa7b6255f166a69f"
+    }
+  }
+}
