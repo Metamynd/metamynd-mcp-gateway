@@ -49,7 +49,7 @@
     "conformance": "node conformance/run.mjs"
   },
   "dependencies": {
-    "@metamynd/agentsafe-guard": "0.37.1",
+    "@metamynd/agentsafe-guard": "0.37.2",
     "@modelcontextprotocol/client": "2.2.0",
     "@modelcontextprotocol/server": "2.2.0",
     "fflate": "0.8.3"
