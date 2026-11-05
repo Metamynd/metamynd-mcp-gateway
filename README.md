@@ -1,5 +1,7 @@
 # MetaMynd MCP Gateway
 
+[![HOL Guard](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dmetamynd%252Fmetamynd-mcp-gateway%26metric%3Drelease)](https://hol.org/registry/plugins/metamynd%2Fmetamynd-mcp-gateway?utm_source=hol_marketplace&utm_medium=plugins_badge&utm_campaign=plugins&utm_content=metamynd%2Fmetamynd-mcp-gateway&ref=plugin-author-27aa10b0)
+
 MetaMynd MCP Gateway — Secure AI Agent Tool Execution
 
 Add real-time governance to MCP-based AI agents without modifying your agent code. Enforce policies, spending limits, permissions and approval requirements before tool execution, with an auditable record of decisions.
