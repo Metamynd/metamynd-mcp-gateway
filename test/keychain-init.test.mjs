@@ -12,7 +12,9 @@ import { schemaHashOf } from '../src/schema-hash.mjs';
 import { PAY_TOOL } from './fixtures/upstream.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const SECRET = 'sk_live_51HxAbCdEf "quoted" $dollar';
+/** A synthetic secret; the quotes and `$` check that nothing is shell-interpreted on the way to the keychain. */
+const PLAINTEXT = 'example-secret-7f3a';
+const SECRET = `${PLAINTEXT} "quoted" $dollar`;
 
 /** A fake runner that records each command and answers like the real tool. */
 function fakeRunner(answer = (/** @type {string} */ _cmd, /** @type {string[]} */ _args, /** @type {string|undefined} */ _input) => ({ code: 0, stdout: '', stderr: '' })) {
@@ -28,7 +30,7 @@ test('macOS: stored through `security -i` on stdin, hex-encoded — never on a c
   await kc.set('pay', SECRET);
   assert.deepEqual(calls[0].args, ['-i']);
   assert.ok(calls[0].input?.includes(`-X ${Buffer.from(SECRET).toString('hex')}`));
-  assert.ok(!calls.some((c) => c.args.join(' ').includes('sk_live')), 'the secret is in no argument');
+  assert.ok(!calls.some((c) => c.args.join(' ').includes(PLAINTEXT)), 'the secret is in no argument');
   assert.equal(await kc.get('pay'), SECRET);
   assert.deepEqual(calls[1].args, ['find-generic-password', '-s', SERVICE, '-a', 'pay', '-w']);
 });
@@ -60,7 +62,7 @@ test('Windows: a real DPAPI round trip (user-scoped), stored as a protected blob
   await kc.set('pay', SECRET);
   assert.equal(await kc.get('pay'), SECRET);
   const blob = await readFile(path.join(stateDir, 'secrets', 'pay.dpapi'), 'utf8');
-  assert.ok(!blob.includes('sk_live') && !Buffer.from(blob, 'base64').toString('latin1').includes('sk_live'), 'the file holds no plaintext');
+  assert.ok(!blob.includes(PLAINTEXT) && !Buffer.from(blob, 'base64').toString('latin1').includes(PLAINTEXT), 'the file holds no plaintext');
 });
 
 test('init drafts: action from the tool name, value fields by name and type, risk from what it moves', () => {
@@ -121,6 +123,6 @@ test('the CLI: secret set reads stdin, stores it, and check never prints it', { 
   assert.match(set.stderr, /Stored "pay"/);
   const check = /** @type {any} */ (await cli(['secret', 'check', 'pay', '--state-dir', stateDir]));
   assert.match(check.stderr, /"pay" is in the keychain/);
-  assert.ok(!`${set.stdout}${set.stderr}${check.stdout}${check.stderr}`.includes('sk_live'));
+  assert.ok(!`${set.stdout}${set.stderr}${check.stdout}${check.stderr}`.includes(PLAINTEXT));
   assert.equal(await createKeychain({ stateDir }).get('pay'), SECRET);
 });

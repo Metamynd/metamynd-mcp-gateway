@@ -6,12 +6,13 @@
 //     through the signer daemon, which holds the key itself).
 // Claude Desktop ships Node.js, so the extension runs the bundled gateway with no other install.
 
-import { exec, execFile } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { npmCommand } from './npm-command.mjs';
 
 export const MANIFEST_VERSION = '0.2';
 export const MCPB_PACKAGE = '@anthropic-ai/mcpb@2.1.2';
@@ -99,17 +100,15 @@ export function planExtension({ raw, agentFile, version, agentName, fields = {} 
 }
 
 /**
- * Run npm / npx. On Windows they are .cmd scripts, which Node only starts through a shell; the command is then built as
- * ONE string with every argument quoted, rather than handing a shell unescaped arguments.
- * @type {(cmd: string, args: string[], cwd: string) => Promise<void>}
+ * Run npm / npx with an argument array, never through a shell (see npm-command.mjs).
+ * @type {(cmd: 'npm' | 'npx', args: string[], cwd: string) => Promise<void>}
  */
 const runChecked = (cmd, args, cwd) => new Promise((resolve, reject) => {
   /** @param {Error | null} err @param {unknown} _out @param {unknown} stderr */
   const done = (err, _out, stderr) => (err ? reject(new Error(`${cmd} ${args.join(' ')} failed: ${String(stderr).trim() || err.message}`)) : resolve());
-  const opts = { cwd, windowsHide: true, maxBuffer: 16 << 20 };
-  if (process.platform !== 'win32') { execFile(cmd, args, opts, done); return; }
-  const quoted = [cmd, ...args].map((a) => (/^[A-Za-z0-9_./:@=-]+$/.test(a) ? a : `"${a.replace(/"/g, '""')}"`)).join(' ');
-  exec(quoted, opts, done);
+  let command;
+  try { command = npmCommand(cmd, args); } catch (e) { reject(e); return; }
+  execFile(command.file, command.args, { cwd, windowsHide: true, maxBuffer: 16 << 20 }, done);
 });
 
 /**

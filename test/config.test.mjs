@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import { ConfigError, parseConfig } from '../src/config.mjs';
 
 const HASH = `sha256:${'a'.repeat(64)}`;
+/** A `keychain:<name>` reference: it names an OS keychain entry and holds no secret. */
+const keychainRef = (/** @type {string} */ name) => `keychain:${name}`;
 const valid = () => ({
   agentConfig: './agent.metamynd.json',
   upstreams: {
-    payments: { command: 'npx', args: ['-y', 'payments-mcp@1.2.3'], env: { API_KEY: 'keychain:payments-api-key' } },
+    payments: { command: 'npx', args: ['-y', 'payments-mcp@1.2.3'], env: { API_KEY: keychainRef('payments-api-key') } },
     crm: { url: 'https://crm.example.com/mcp', headers: { Authorization: 'Bearer ${CRM_TOKEN}' } },
   },
   tools: {
@@ -40,7 +42,8 @@ test('decision 2: an upstream without a credential reference is refused', () => 
 
 test('a literal secret written into the file is refused', () => {
   const raw = valid();
-  raw.upstreams.payments.env = { API_KEY: 'sk_live_51HxAbCdEfGhIjKl', REGION: '${REGION}' };
+  // Synthetic: any literal of 12+ characters under a credential-like name is refused, whatever it looks like.
+  raw.upstreams.payments.env = { API_KEY: 'example-literal-secret-value', REGION: '${REGION}' };
   has(problemsOf(raw), 'upstreams.payments.env.API_KEY: looks like a secret');
 });
 

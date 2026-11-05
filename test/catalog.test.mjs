@@ -4,6 +4,9 @@ import { ConfigError, parseConfig } from '../src/config.mjs';
 import { catalogPicksIn, configFromCatalog, credentialFields, entryProblems, loadCatalog, serviceSetupFor } from '../src/catalog.mjs';
 import { planExtension } from '../src/extension.mjs';
 
+/** A `keychain:<name>` reference: it names an OS keychain entry and holds no secret. */
+const keychainRef = (/** @type {string} */ name) => `keychain:${name}`;
+
 test('the shipped catalog loads, and every entry passes the gateway\'s own checks', async () => {
   const catalog = await loadCatalog();
   assert.ok(catalog.has('notion'));
@@ -118,7 +121,7 @@ test('configFromCatalog for a folder-started app: per-agent keychain names, and 
     agentConfig: './agent.metamynd.json', picks: [{ id: 'notion', tools: ['API-post-search'] }],
     credentials: 'keychain', keychainPrefix: 'metamynd-docs-helper-', agentKey: 'keychain:metamynd-docs-helper-agent-key',
   });
-  assert.deepEqual(raw.upstreams.notion.env, { NOTION_TOKEN: 'keychain:metamynd-docs-helper-notion-notion-token' });
+  assert.deepEqual(raw.upstreams.notion.env, { NOTION_TOKEN: keychainRef('metamynd-docs-helper-notion-notion-token') });
   assert.equal(raw.agentKey, 'keychain:metamynd-docs-helper-agent-key');
   assert.equal(parseConfig(raw, '/').agentKey, 'keychain:metamynd-docs-helper-agent-key');
 });

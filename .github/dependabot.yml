@@ -1,0 +1,30 @@
+version: 2
+
+# Weekly update PRs for every dependency surface. The cooldown holds a new release back for 14 days, the same rule the
+# repo pins by (nothing newer than two weeks), so a compromised release has time to be noticed and pulled first.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 5
+
+  # The conformance job's framework clients (ci.yml).
+  - package-ecosystem: pip
+    directory: /conformance
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14

@@ -11,6 +11,8 @@ import { AGENT_KEY_ENV, buildExtension, planExtension } from '../src/extension.m
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const input = { configPath: '/home/sam/metamynd/mcp-gateway.json', version: '1.2.3' };
+/** A `keychain:<name>` reference: it names an OS keychain entry and holds no secret. */
+const keychainRef = (/** @type {string} */ name) => `keychain:${name}`;
 
 test('every host snippet pins the scoped package and carries no credential', () => {
   for (const host of Object.keys(HOSTS)) {
@@ -33,7 +35,7 @@ test('host snippets follow each app\'s own format (docs/hosts.md)', () => {
 const raw = {
   agentConfig: './agent.metamynd.json',
   upstreams: {
-    payments: { command: 'npx', args: ['-y', 'payments-mcp@1.0.0'], env: { API_KEY: 'keychain:payments-api-key', REGION: 'eu' } },
+    payments: { command: 'npx', args: ['-y', 'payments-mcp@1.0.0'], env: { API_KEY: keychainRef('payments-api-key'), REGION: 'eu' } },
     crm: { url: 'https://crm.example.com/mcp', headers: { Authorization: 'Bearer ${CRM_TOKEN}' } },
   },
   tools: {},

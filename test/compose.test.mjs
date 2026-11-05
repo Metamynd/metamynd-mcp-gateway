@@ -64,7 +64,7 @@ test('a real base, composed for an agent, runs as Claude Desktop runs it', { ski
   assert.ok(existsSync(args[0]));
   // NOTION_TOKEN is a dummy: listing the gateway's tools starts the real Notion server, which needs none to list.
   const app = new Client({ name: 'claude-desktop-sim', version: '0' });
-  await app.connect(new StdioClientTransport({ command: process.execPath, args, env: { MCPGW_AGENT_KEY: '302e020100300506032b657004220420' + '11'.repeat(32), NOTION_TOKEN: 'ntn_dummy', PATH: process.env.PATH ?? '', ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}) }, stderr: 'ignore' }));
+  await app.connect(new StdioClientTransport({ command: process.execPath, args, env: { MCPGW_AGENT_KEY: '302e020100300506032b657004220420' + '11'.repeat(32), NOTION_TOKEN: 'example-notion-token', PATH: process.env.PATH ?? '', ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}) }, stderr: 'ignore' }));
   try {
     const { tools } = await app.listTools();
     assert.deepEqual(tools.map((t) => t.name).sort(), ['notion__API-post-page', 'notion__API-post-search']);
