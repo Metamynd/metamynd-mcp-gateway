@@ -1,5 +1,9 @@
 # MetaMynd MCP Gateway
 
+MetaMynd MCP Gateway — Secure AI Agent Tool Execution
+
+Add real-time governance to MCP-based AI agents without modifying your agent code. Enforce policies, spending limits, permissions and approval requirements before tool execution, with an auditable record of decisions.
+
 **Status: 0.2.5, developer preview.** The design is in [docs/design.md](docs/design.md); what each AI app actually
 does is in [docs/hosts.md](docs/hosts.md). Releases: [docs/releasing.md](docs/releasing.md) and the
 [release checklist](docs/release-checklist.md). Reviewed servers: [catalog/](catalog) (Notion, HubSpot, Brave Search).
