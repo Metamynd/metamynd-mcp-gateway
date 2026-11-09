@@ -1,0 +1,19 @@
+{
+  "name": "metamynd-gateway",
+  "owner": {
+    "name": "MetaMynd",
+    "url": "https://metamynd.ai"
+  },
+  "metadata": {
+    "description": "The MetaMynd MCP Gateway setup plugin."
+  },
+  "plugins": [
+    {
+      "name": "metamynd-mcp-gateway",
+      "source": "./",
+      "description": "Put an AI app's MCP servers behind the MetaMynd gateway: every tool call is allowed, refused or held for a person before it runs.",
+      "version": "0.1.0",
+      "license": "MIT"
+    }
+  ]
+}

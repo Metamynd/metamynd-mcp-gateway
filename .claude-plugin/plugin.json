@@ -1,0 +1,13 @@
+{
+  "name": "metamynd-mcp-gateway",
+  "version": "0.1.0",
+  "description": "Put an AI app's MCP servers behind the MetaMynd gateway: every tool call is allowed, refused or held for a person before it runs.",
+  "author": {
+    "name": "MetaMynd",
+    "url": "https://metamynd.ai"
+  },
+  "homepage": "https://github.com/Metamynd/metamynd-mcp-gateway#readme",
+  "repository": "https://github.com/Metamynd/metamynd-mcp-gateway",
+  "license": "MIT",
+  "keywords": ["mcp", "ai-agents", "governance", "gateway", "authorization", "security"]
+}

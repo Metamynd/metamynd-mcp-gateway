@@ -50,6 +50,20 @@ a field Claude Desktop asks for at install and stores securely. `config --host` 
 the agent's mandate and the flag removed. Credentials are referenced, never written: `keychain:<name>` or `${VAR}`.
 The configuration format is in [docs/design.md §4](docs/design.md#4-configuration).
 
+## Install as an AI coding plugin
+
+A small plugin walks your coding agent through this setup: storing credentials, drafting the mapping, reviewing each
+tool with you, and connecting your app. It installs instructions only. It adds no MCP server, hooks or background process.
+
+Claude Code:
+
+```text
+/plugin marketplace add Metamynd/metamynd-mcp-gateway
+/plugin install metamynd-mcp-gateway@metamynd-gateway
+```
+
+Codex loads the same skill through `.codex-plugin/plugin.json`.
+
 ## For integrators
 
 The MetaMynd dashboard builds each agent's setup with three typed entry points:
