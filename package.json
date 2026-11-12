@@ -57,7 +57,7 @@
   "devDependencies": {
     "@anthropic-ai/mcpb": "2.1.2",
     "@types/node": "22.20.4",
-    "typescript": "5.9.3"
+    "typescript": "7.0.2"
   },
   "exports": {
     "./catalog": {
