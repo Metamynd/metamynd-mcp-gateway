@@ -2,6 +2,10 @@
 // mcp-gateway — the MetaMynd MCP gateway.
 //
 //   mcp-gateway [serve] --config <mcp-gateway.json> [--state-dir <dir>]   run it for an AI app, over stdio
+//   mcp-gateway serve --http --config <file> [--host 127.0.0.1] [--port 8787]
+//               [--tls-cert <pem> --tls-key <pem> | --behind-tls-proxy] [--allowed-origin <o>]...
+//                                                                        run it remotely, over Streamable HTTP (on your own server)
+//   mcp-gateway token create [--label <text>] | token list | token revoke <id>   access tokens for --http
 //   mcp-gateway init --config <mcp-gateway.json>                         draft the mapping for every upstream tool
 //   mcp-gateway secret set <name>                                        store a credential in the OS keychain
 //   mcp-gateway secret check <name>                                      say whether it is there (never prints it)
@@ -26,7 +30,9 @@ import { AGENT_KEY_ENV, buildExtension, composeExtension, planExtension } from '
 import { HOSTS, directAccessWarning, hostSnippet } from './hosts.mjs';
 import { draftTools } from './init.mjs';
 import { openJournal } from './journal.mjs';
+import { createHttpListener, listen, listenProblem, MCP_PATH } from './http.mjs';
 import { createKeychain } from './keychain.mjs';
+import { createToken, listTokens, revokeToken, tokenFile, tokenVerifier } from './tokens.mjs';
 import { resolveSecrets, SecretError } from './secrets.mjs';
 import { connectUpstreams, listAllTools, reconcileTools } from './upstreams.mjs';
 
@@ -37,7 +43,11 @@ const say = (line) => process.stderr.write(`${line}\n`);
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { config: { type: 'string' }, 'state-dir': { type: 'string' }, host: { type: 'string' }, out: { type: 'string' }, name: { type: 'string' }, base: { type: 'string' } },
+  options: {
+    config: { type: 'string' }, 'state-dir': { type: 'string' }, host: { type: 'string' }, out: { type: 'string' }, name: { type: 'string' }, base: { type: 'string' },
+    http: { type: 'boolean' }, port: { type: 'string' }, 'tls-cert': { type: 'string' }, 'tls-key': { type: 'string' },
+    'behind-tls-proxy': { type: 'boolean' }, 'allowed-origin': { type: 'string', multiple: true }, label: { type: 'string' },
+  },
 });
 const stateDir = values['state-dir'] ?? path.join(os.homedir(), '.metamynd', 'mcp-gateway');
 const keychain = createKeychain({ stateDir });
@@ -50,6 +60,25 @@ function configFile() {
 }
 
 async function serve() {
+  // --http: check how it will listen, and that someone can sign in, before starting anything (fail fast and closed).
+  /** @type {{ host: string, port: number, tls?: { cert: Buffer, key: Buffer } } | null} */
+  let httpListen = null;
+  if (values.http) {
+    const host = values.host ?? '127.0.0.1';
+    const port = Number(values.port ?? 8787);
+    if (!Number.isInteger(port) || port < 0 || port > 65535) throw new ConfigError([`--port must be a port number, not "${values.port}"`]);
+    if (Boolean(values['tls-cert']) !== Boolean(values['tls-key'])) throw new ConfigError(['--tls-cert and --tls-key go together']);
+    const tls = values['tls-cert'] && values['tls-key'] ? { cert: await readFile(values['tls-cert']), key: await readFile(values['tls-key']) } : undefined;
+    const problem = listenProblem({ host, tls, behindTlsProxy: values['behind-tls-proxy'] });
+    if (problem) throw new ConfigError([problem]);
+    if ((await tokenVerifier(tokenFile(stateDir)).count()) === 0) {
+      throw new ConfigError([`no access token: create one with \`mcp-gateway token create --label <app> --state-dir ${stateDir}\` and give it to the AI app`]);
+    }
+    httpListen = { host, port, tls };
+  } else if (values.host || values.port || values['tls-cert'] || values['behind-tls-proxy'] || values['allowed-origin']) {
+    throw new ConfigError(['--host, --port, --tls-cert, --tls-key, --behind-tls-proxy and --allowed-origin need --http']);
+  }
+
   const config = await loadConfig(configFile());
   for (const w of config.warnings) log({ event: 'warning', message: w });
 
@@ -86,17 +115,64 @@ async function serve() {
     log,
     callUpstream: (mapping, args) => /** @type {any} */ (clients.get(mapping.upstream)).callTool({ name: mapping.tool, arguments: args }),
   });
-  const server = createGatewayServer({ offered, governance, serverInfo: { name: 'metamynd', version: await ownVersion() } });
-  await server.connect(new StdioServerTransport());
-  log({ event: 'ready', agentDid: guard.agentDid, offered: offered.length, withheld: withheld.length, upstreams: clients.size });
+  const serverInfo = { name: 'metamynd', version: await ownVersion() };
+  const ready = { event: 'ready', agentDid: guard.agentDid, offered: offered.length, withheld: withheld.length, upstreams: clients.size };
 
+  /** @type {Array<() => Promise<unknown>>} */
+  const closers = [];
   const shutdown = async () => {
+    await Promise.allSettled(closers.map((c) => c()));
     await Promise.allSettled([...clients.values()].map((c) => c.close()));
     process.exit(0);
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
+
+  if (httpListen) {
+    // Last resort: a long-running server must say why it stopped, in the log the operator reads.
+    process.on('uncaughtException', (err) => { log({ event: 'fatal', message: err.stack ?? err.message }); process.exit(1); });
+    // One fresh MCP server per HTTP request, all over the same governance, journal and upstream connections.
+    const listener = createHttpListener({
+      makeServer: () => createGatewayServer({ offered, governance, serverInfo }),
+      verifier: tokenVerifier(tokenFile(stateDir)),
+      allowedOrigins: values['allowed-origin'] ?? [],
+      log,
+    });
+    const httpServer = /** @type {import('node:http').Server} */ (await listen(listener, httpListen));
+    closers.push(() => listener.close(), () => new Promise((r) => httpServer.close(r)));
+    const address = /** @type {import('node:net').AddressInfo} */ (httpServer.address());
+    log({ ...ready, transport: 'http', url: `${httpListen.tls ? 'https' : 'http'}://${httpListen.host}:${address.port}${MCP_PATH}`, behindTlsProxy: Boolean(values['behind-tls-proxy']) });
+    return;
+  }
+
+  const server = createGatewayServer({ offered, governance, serverInfo });
+  await server.connect(new StdioServerTransport());
+  log({ ...ready, transport: 'stdio' });
   process.stdin.on('close', shutdown);
+}
+
+async function token() {
+  const [, verb, id] = positionals;
+  const file = tokenFile(stateDir);
+  if (verb === 'create') {
+    const { token: value, entry } = await createToken(file, values.label);
+    say(`Created token ${entry.id}${entry.label ? ` (${entry.label})` : ''}. It is shown once, below; only its hash is kept.`);
+    say('Give it to the AI app as the header  Authorization: Bearer <token>  and keep it out of chats, prompts and files the AI can read.');
+    process.stdout.write(`${value}\n`);
+    return;
+  }
+  if (verb === 'list') {
+    const tokens = await listTokens(file);
+    if (!tokens.length) say('No tokens.');
+    for (const t of tokens) say(`${t.id}  ${t.revokedAt ? `revoked ${t.revokedAt}` : 'active'}  created ${t.createdAt}${t.label ? `  ${t.label}` : ''}`);
+    return;
+  }
+  if (verb === 'revoke' && id) {
+    if (!(await revokeToken(file, id))) throw new ConfigError([`no token "${id}"; see \`mcp-gateway token list\``]);
+    say(`Revoked ${id}. A running gateway refuses it from the next request.`);
+    return;
+  }
+  throw new ConfigError(['usage: mcp-gateway token create [--label <text>] | token list | token revoke <id>']);
 }
 
 async function init() {
@@ -214,9 +290,9 @@ async function ownVersion() {
   return String(pkg.version);
 }
 
-const run = { serve, init, secret, config, extension }[command];
+const run = { serve, init, secret, token, config, extension }[command];
 if (!run) {
-  say(`unknown command "${command}" — use serve, init, secret, config or extension`);
+  say(`unknown command "${command}" — use serve, init, secret, token, config or extension`);
   process.exit(2);
 }
 run().catch((err) => {

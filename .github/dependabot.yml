@@ -21,6 +21,14 @@ updates:
       default-days: 14
     open-pull-requests-limit: 5
 
+  # The remote gateway's base image (Dockerfile), pinned by digest.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+
   # The conformance job's framework clients (ci.yml).
   - package-ecosystem: pip
     directory: /conformance

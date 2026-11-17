@@ -4,7 +4,9 @@
 Claude Desktop extension, the curated catalog (Notion, HubSpot, Brave Search), the dashboard's "Connect to an AI app",
 conformance runs with real framework clients, and the [release checklist](release-checklist.md). Open in phase 1: the
 timed first-action run in Claude Desktop (a person, per the checklist). **Phases 2–4 are on hold until phase 1 is stable**
-(owner decision, 2026-10-15). **Package:** `@metamynd/mcp-gateway` · **Repository:**
+(owner decision, 2026-10-15). The hold was **partly lifted for Grok Bot on 2026-11-17**: the self-hosted remote mode
+(phase 3, built: [remote.md](remote.md)) and delegated chaining to a guarded upstream (phase 4). Everything else in
+phases 2–4 stays on hold. **Package:** `@metamynd/mcp-gateway` · **Repository:**
 [Metamynd/metamynd-mcp-gateway](https://github.com/Metamynd/metamynd-mcp-gateway) · **Editors:** MetaMynd
 
 Builds on [MAGP v1.0](https://metamynd.ai/developers/spec) and the published MetaMynd SDKs in
@@ -271,7 +273,7 @@ authority the owner granted.
 | Mode | Runs where | Serves | Notes |
 |---|---|---|---|
 | **Local** (phase 1) | the user's machine, started by the host over stdio | desktop apps, IDEs, local frameworks | Keys and credentials never leave the machine. One agent per instance. |
-| **Self-hosted remote** (phase 3) | the customer's server or container (Docker image) | hosted chat products, workflow tools, team setups | Streamable HTTP, TLS, OAuth per the MCP authorization spec. |
+| **Self-hosted remote** (phase 3) | the customer's server or container (Docker image) | hosted chat products, workflow tools, team setups | Streamable HTTP, TLS, a bearer token per installation ([remote.md](remote.md)); OAuth per the MCP authorization spec to follow. Built for Grok Bot (2026-11-17). |
 
 There is no MetaMynd-hosted mode (decision 3).
 
@@ -295,7 +297,7 @@ The MetaMynd gate, mandates, evidence and APIs are unchanged.
 | 1 | Local gateway; held requests and resume; `init`; the **Claude Desktop extension**; dashboard "Connect to …"; snippets for Claude Code, Cursor, VS Code; OpenAI Agents SDK and LangGraph | A non-technical user reaches a first governed action in < 5 minutes from the dashboard alone; the bypass tests show no upstream execution without an allow. **Built** (0.1.0–0.2.4). The bypass cases pass identically through the MCP TypeScript SDK, the OpenAI Agents SDK (JavaScript and Python) and LangChain / LangGraph in CI (`npm run conformance`). **Open:** the timed first-action run, by a person, per the [release checklist](release-checklist.md). |
 | | **Phases 2–4: on hold until phase 1 is stable.** | |
 | 2 | More hosts' snippets and guides (Windsurf, Zed, Cline, CrewAI, ADK, …) | Each listed host has a tested guide |
-| 3 | Self-hosted remote mode: Streamable HTTP, OAuth, Docker image | ChatGPT and one workflow tool governed through a customer-run gateway |
+| 3 | Self-hosted remote mode: Streamable HTTP, OAuth, Docker image | ChatGPT and one workflow tool governed through a customer-run gateway. **For Grok Bot (hold lifted 2026-11-17):** HTTP, bearer tokens, limits and the Docker image are built ([remote.md](remote.md)); OAuth and a real Grok Bot run are open. |
 | 4 | Delegated chaining with `agentsafe-mcp-guard` upstreams; several agents per remote gateway | — |
 
 ## 10. Testing

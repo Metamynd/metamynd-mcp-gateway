@@ -47,6 +47,17 @@ design around, not a fact. Re-check before each release — hosts change quickly
 
 ## Remote-only hosts (phase 3)
 
+- **Grok Bot** (docs.x.ai, read 2026-11-17): custom connectors are either **Remote HTTPS** (a URL, HTTP headers,
+  OAuth client ID and secret) or **Command**.
+  - A Command server runs on the Bot's cloud computer. All of the user's Bots share that computer, and sudo is on by
+    default. So use **Remote HTTPS** to a gateway you run ([remote.md](remote.md)), with
+    `Authorization: Bearer <token>` as the header.
+  - A server on a private network, or behind a private CA, asks the user to approve it.
+  - The team's connector policy can block servers. *Apply to MCP servers* checks remote servers against the network
+    allow-list, but not Command servers.
+  - Bots act as the signed-in member and send no per-Bot identity.
+  - Not documented: call timeout, tool-count and name limits, and how errors are shown. Measure these in a real run.
+
 - **Claude.ai custom connectors:** remote only, reachable from the public internet; OAuth, static headers or none.
   ([help](https://support.claude.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp))
 - **ChatGPT apps:** Streamable HTTP at a public HTTPS endpoint; OAuth 2.1. ([Apps SDK](https://developers.openai.com/apps-sdk/build/mcp-server))

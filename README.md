@@ -39,7 +39,13 @@ mcp-gateway init --config mcp-gateway.json         # draft a mapping for every t
 mcp-gateway --config mcp-gateway.json              # run it for an AI app (stdio)
 mcp-gateway extension --config mcp-gateway.json --name "Accounts Payable"   # one-click Claude Desktop extension
 mcp-gateway config --host cursor --config mcp-gateway.json                 # the snippet for another app
+mcp-gateway token create --label grok-bot          # an access token for the remote gateway (shown once)
+mcp-gateway serve --http --behind-tls-proxy --host 0.0.0.0 --config mcp-gateway.json   # remote, on your own server
 ```
+
+**Remote mode** serves the same governed tools over Streamable HTTP, for apps that can't start a local process
+(Grok Bot's Remote HTTPS connectors, for example). It runs on your own server, needs a bearer token per installation,
+and refuses plain HTTP on a public address. See [docs/remote.md](docs/remote.md); there is a [Dockerfile](Dockerfile).
 
 `extension` builds a `.mcpb` for one agent. Nothing secret is inside it: each credential, and the agent's key, becomes
 a field Claude Desktop asks for at install and stores securely. `config --host` knows `claude-desktop`, `claude-code`,
